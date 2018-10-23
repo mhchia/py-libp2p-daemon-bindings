@@ -1,5 +1,4 @@
 import socket
-import sys
 
 import base58
 
@@ -8,9 +7,6 @@ import multiaddr
 from p2pd.config import (
     control_path,
     listen_path,
-)
-from p2pd.constants import (
-    BUFFER_SIZE,
 )
 from p2pd.serialization import (
     PBReadWriter,

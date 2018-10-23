@@ -24,7 +24,7 @@ def deserialize(entire_bytes, msg):
 class PBReadWriter:
 
     socket = None
-    read_max_size = BUFFER_SIZE  # FIXME: why BUFFER_SIZE can't be too large?
+    read_max_size = BUFFER_SIZE
 
     def __init__(self, sock):
         self.socket = sock

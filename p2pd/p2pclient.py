@@ -23,7 +23,7 @@ class Multiaddr(multiaddr.Multiaddr):
         # e.g. maddr_bytes = b'\x04\x7f\x00\x00\x01\x06\xc2\xc9'
         if bytes_addr is not None:
             maddr_hex = bytes_addr.hex()  # '047f00000106c2c9'
-            bytes_addr = maddr_hex.encode()
+            bytes_addr = maddr_hex.encode()  # b'047f00000106c2c9'
         super().__init__(bytes_addr=bytes_addr, string_addr=string_addr)
 
     def to_bytes(self):
@@ -39,7 +39,14 @@ class PeerID:
     _bytes = None
 
     def __init__(self, peer_id_bytes):
+        # TODO: should add checks for the validity of peer_id
         self._bytes = peer_id_bytes
+
+    def __eq__(self, other):
+        return self._bytes == other._bytes
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __repr__(self):
         return "<PeerID {}>".format(self.to_string()[2:10])
@@ -92,12 +99,12 @@ class Client:
 
     def identify(self):
         s = self._new_control_conn()
-        rw = PBReadWriter(s)
+        rwtor = PBReadWriter(s)
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
-        rw.write(req)
+        rwtor.write(req)
 
         resp = p2pd_pb.Response()
-        rw.read(resp)
+        rwtor.read(resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
@@ -135,16 +142,3 @@ class Client:
         raise_if_failed(resp)
 
         s.close()
-
-
-def main():
-    c = Client(control_path, listen_path)
-    peer_id, maddrs = c.identify()
-    print(peer_id, maddrs)
-    maddrs = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
-    peer_id = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
-    c.connect(peer_id, maddrs)
-
-
-if __name__ == "__main__":
-    main()

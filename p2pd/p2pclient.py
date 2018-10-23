@@ -23,11 +23,12 @@ class Multiaddr(multiaddr.Multiaddr):
     """Currently use `multiaddr.Multiaddr` as the backend.
     """
 
-    def __init__(self, maddr_bytes):
+    def __init__(self, *, bytes_addr=None, string_addr=None):
         # e.g. maddr_bytes = b'\x04\x7f\x00\x00\x01\x06\xc2\xc9'
-        maddr_hex = maddr_bytes.hex()  # '047f00000106c2c9'
-        maddr_hex_bytes = maddr_hex.encode()
-        super().__init__(bytes_addr=maddr_hex_bytes)
+        if bytes_addr is not None:
+            maddr_hex = bytes_addr.hex()  # '047f00000106c2c9'
+            bytes_addr = maddr_hex.encode()
+        super().__init__(bytes_addr=bytes_addr, string_addr=string_addr)
 
     def to_bytes(self):
         strange_bytes = super().to_bytes()  # b'047f00000106c2c9'
@@ -36,6 +37,41 @@ class Multiaddr(multiaddr.Multiaddr):
 
     def to_string(self):
         return multiaddr.codec.bytes_to_string(self._bytes)
+
+
+class PeerID:
+    _bytes = None
+
+    def __init__(self, peer_id_bytes):
+        self._bytes = peer_id_bytes
+
+    def __repr__(self):
+        return "<PeerID {}>".format(self.to_string()[2:10])
+
+    def to_bytes(self):
+        return self._bytes
+
+    def to_string(self):
+        return base58.b58encode(self._bytes).decode()
+
+    @classmethod
+    def from_string(cls, peer_id_string):
+        peer_id_bytes = base58.b58decode(peer_id_string)
+        pid = PeerID(peer_id_bytes)
+        return pid
+
+
+class ControlFailure(Exception):
+    pass
+
+
+def raise_if_failed(response):
+    if response.type == p2pd_pb.Response.ERROR:
+        raise ControlFailure(
+            "connect failed. msg={}".format(
+                response.error.msg,
+            )
+        )
 
 
 class Client:
@@ -60,13 +96,13 @@ class Client:
 
     def identify(self):
         s = self._new_control_conn()
-        rw = PBReadWriter(s, BUFFER_SIZE)  # FIXME: why BUFFER_SIZE can't be too large?
+        rw = PBReadWriter(s)
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
         rw.write(req)
 
         resp = p2pd_pb.Response()
         rw.read(resp)
-        assert resp.identify is not None
+        raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
 
@@ -76,20 +112,42 @@ class Client:
             # addr is
             # maddr_str = str(maddr)[2:-1]
             # maddr_bytes_m = bytes.fromhex(maddr_str)
-            maddr = Multiaddr(maddr_bytes)
+            maddr = Multiaddr(bytes_addr=maddr_bytes)
             assert maddr.to_bytes() == maddr_bytes
-            maddr_str = maddr.to_string()
-            maddrs.append(maddr_str)
-        peer_id = base58.b58encode(peer_id_bytes)
+            maddrs.append(maddr)
+        peer_id = PeerID(peer_id_bytes)
 
         s.close()
 
         return peer_id, maddrs
 
+    def connect(self, peer_id, maddrs):
+        s = self._new_control_conn()
+        rwtor = PBReadWriter(s)
+        maddrs_bytes = [i.to_bytes() for i in maddrs]
+        connect_req = p2pd_pb.ConnectRequest(
+            peer=peer_id.to_bytes(),
+            addrs=maddrs_bytes,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.CONNECT,
+            connect=connect_req,
+        )
+        rwtor.write(req)
+        resp = p2pd_pb.Response()
+        rwtor.read(resp)
+        raise_if_failed(resp)
+
+        s.close()
+
 
 def main():
     c = Client(control_path, listen_path)
-    print(c.identify())
+    peer_id, maddrs = c.identify()
+    print(peer_id, maddrs)
+    maddrs = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
+    peer_id = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
+    c.connect(peer_id, maddrs)
 
 
 if __name__ == "__main__":

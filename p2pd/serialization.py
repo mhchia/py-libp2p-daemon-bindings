@@ -1,6 +1,10 @@
 from google.protobuf.internal.decoder import _DecodeVarint
 from google.protobuf.internal.encoder import _VarintBytes
 
+from p2pd.constants import (
+    BUFFER_SIZE,
+)
+
 
 def serialize(pb_msg):
     size = pb_msg.ByteSize()
@@ -20,11 +24,10 @@ def deserialize(entire_bytes, msg):
 class PBReadWriter:
 
     socket = None
-    read_max_size = None
+    read_max_size = BUFFER_SIZE  # FIXME: why BUFFER_SIZE can't be too large?
 
-    def __init__(self, sock, read_max_size):
+    def __init__(self, sock):
         self.socket = sock
-        self.read_max_size = read_max_size
 
     def write(self, pb_msg):
         pb_msg_bytes = serialize(pb_msg)

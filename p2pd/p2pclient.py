@@ -10,6 +10,7 @@ from p2pd.config import (
 )
 from p2pd.serialization import (
     PBReadWriter,
+    SockStream,
 )
 
 import p2pd.pb.p2pd_pb2 as p2pd_pb
@@ -93,23 +94,21 @@ class Client:
 
     def _new_control_conn(self):
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        # TODO: handle `socket.error`?
         s.connect(self.control_path)
         return s
 
     def identify(self):
         s = self._new_control_conn()
-        rwtor = PBReadWriter(s)
+        rwtor = PBReadWriter(SockStream(s))
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
-        rwtor.write(req)
+        rwtor.write_msg(req)
 
         resp = p2pd_pb.Response()
-        rwtor.read(resp)
+        rwtor.read_msg(resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
 
-        # TODO: PeerID, MultiAddr
         maddrs = []
         for maddr_bytes in maddrs_bytes:
             # addr is
@@ -122,11 +121,13 @@ class Client:
 
         s.close()
 
+        print(peer_id)
+        print(maddrs)
         return peer_id, maddrs
 
     def connect(self, peer_id, maddrs):
         s = self._new_control_conn()
-        rwtor = PBReadWriter(s)
+        rwtor = PBReadWriter(SockStream(s))
         maddrs_bytes = [i.to_bytes() for i in maddrs]
         connect_req = p2pd_pb.ConnectRequest(
             peer=peer_id.to_bytes(),
@@ -136,9 +137,9 @@ class Client:
             type=p2pd_pb.Request.CONNECT,
             connect=connect_req,
         )
-        rwtor.write(req)
+        rwtor.write_msg(req)
         resp = p2pd_pb.Response()
-        rwtor.read(resp)
+        rwtor.read_msg(resp)
         raise_if_failed(resp)
 
         s.close()

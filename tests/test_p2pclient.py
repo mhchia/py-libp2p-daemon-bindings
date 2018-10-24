@@ -47,7 +47,7 @@ def test_peer_id():
     assert peer_id != peer_id_3
 
 
-def main():
+def test_client_integration():
     c = Client(control_path, listen_path)
     peer_id, maddrs = c.identify()
     maddrs = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
@@ -57,4 +57,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_client_integration()

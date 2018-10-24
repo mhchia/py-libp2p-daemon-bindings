@@ -95,7 +95,13 @@ class PBReadWriter:
         # TODO: get use of `self.read_one_byte`, read a complete varint
         return read_varint(self.iostream)
 
-    def read_msg_bytes_safe(self, pbmsg):
+    def read_msg_bytes_safe(self):
         # TODO: call `len = self.read_varint`, get the len of the data in varint type
         # TODO: `data = self._read_bytes(len)`, and do `deserialize(data, pbmsg)`
-        pass
+        len_msg_bytes = self.read_varint()
+        msg_bytes = self.iostream.read(len_msg_bytes)
+        return msg_bytes
+
+    def read_msg_safe(self, pb_msg):
+        msg_bytes = self.read_msg_bytes_safe()
+        pb_msg.ParseFromString(msg_bytes)

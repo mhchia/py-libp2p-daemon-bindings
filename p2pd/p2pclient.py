@@ -143,3 +143,21 @@ class Client:
         raise_if_failed(resp)
 
         s.close()
+
+    def stream_open(self, peer_id, protocols):
+        s = self._new_control_conn()
+        stream_open_req = p2pd_pb.StreamOpenRequest(
+            peer=peer_id.to_bytes(),
+            proto=protocols,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.STREAM_OPEN,
+            streamOpen=stream_open_req,
+        )
+        rwtor = PBReadWriter(SockStream(s))
+        rwtor.write_msg(req)
+        resp = p2pd_pb.Response()
+        rwtor.read_msg_safe(resp)
+        raise_if_failed(resp)
+
+        s.close()

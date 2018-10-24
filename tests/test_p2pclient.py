@@ -53,8 +53,13 @@ def test_client_integration():
     maddrs = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
     peer_id = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
     c.connect(peer_id, maddrs)
-    print(peer_id.to_bytes())
-
+    c.stream_open(
+        peer_id,
+        [
+            "/shardPeerRequest/1.0.0",
+            "/generalRequest/1.0.0",
+        ],
+    )
 
 if __name__ == "__main__":
     test_client_integration()

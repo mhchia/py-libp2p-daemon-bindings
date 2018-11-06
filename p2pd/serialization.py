@@ -26,39 +26,22 @@ def deserialize(entire_bytes, msg):
     return msg
 
 
-class SockStream:
-    """Wrap read/write to socket
-    """
-    socket = None
-
-    def __init__(self, sock):
-        self.socket = sock
-
-    def read(self, num_bytes):
-        return self.socket.recv(num_bytes)
-
-    def write(self, data_bytes):
-        self.socket.sendall(data_bytes)
-
-    def close(self):
-        self.socket.close()
+def write_varint(s, value):
+    _EncodeVarint(s.write, value, True)
 
 
-# TODO: if we want to use it in sockets, it is possibly blocked?
-def read_byte(s):
-    b = s.read(1)
-    if len(b) == 0:
-        raise EOFError
-    return b[0]
+async def read_byte(s):
+    data = await s.readexactly(1)
+    return data[0]
 
 
-def read_varint(s):
+async def read_varint(s, read_byte):
     iteration = 0
     chunk_bits = 7
     result = 0
     has_next = True
     while has_next:
-        c = read_byte(s)
+        c = await read_byte(s)
         value = (c & 0x7f)
         result |= (value << (iteration * chunk_bits))
         has_next = (c & 0x80)
@@ -71,34 +54,7 @@ def read_varint(s):
     return result
 
 
-def write_varint(s, value):
-    _EncodeVarint(s.write, value, True)
-
-
-class PBReadWriter:
-
-    iostream = None
-    read_max_size = BUFFER_SIZE
-
-    def __init__(self, iostream):
-        self.iostream = iostream
-
-    def write_msg(self, pb_msg):
-        pb_msg_bytes = serialize(pb_msg)
-        self.iostream.write(pb_msg_bytes)
-
-    def read_msg(self, pb_msg):
-        data = self.iostream.read(self.read_max_size)
-        deserialize(data, pb_msg)
-
-    def read_varint(self):
-        return read_varint(self.iostream)
-
-    def read_msg_bytes_safe(self):
-        len_msg_bytes = self.read_varint()
-        msg_bytes = self.iostream.read(len_msg_bytes)
-        return msg_bytes
-
-    def read_msg_safe(self, pb_msg):
-        msg_bytes = self.read_msg_bytes_safe()
-        pb_msg.ParseFromString(msg_bytes)
+async def read_pbmsg_safe(s, pb_msg):
+    len_msg_bytes = await read_varint(s, read_byte)
+    msg_bytes = await s.readexactly(len_msg_bytes)
+    pb_msg.ParseFromString(msg_bytes)

@@ -1,3 +1,4 @@
+import asyncio
 import socket
 
 import base58
@@ -8,9 +9,13 @@ from p2pd.config import (
     control_path,
     listen_path,
 )
+from p2pd.constants import (
+    BUFFER_SIZE,
+)
 from p2pd.serialization import (
-    PBReadWriter,
-    SockStream,
+    deserialize,
+    read_pbmsg_safe,
+    serialize,
 )
 
 import p2pd.pb.p2pd_pb2 as p2pd_pb
@@ -97,14 +102,15 @@ class Client:
         s.connect(self.control_path)
         return s
 
-    def identify(self):
-        s = self._new_control_conn()
-        rwtor = PBReadWriter(SockStream(s))
+    async def identify(self):
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
-        rwtor.write_msg(req)
+        data_bytes = serialize(req)
+        writer.write(data_bytes)
 
         resp = p2pd_pb.Response()
-        rwtor.read_msg(resp)
+        ret_bytes = await reader.read(BUFFER_SIZE)
+        deserialize(ret_bytes, resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
@@ -119,12 +125,11 @@ class Client:
             maddrs.append(maddr)
         peer_id = PeerID(peer_id_bytes)
 
-        s.close()
         return peer_id, maddrs
 
-    def connect(self, peer_id, maddrs):
-        s = self._new_control_conn()
-        rwtor = PBReadWriter(SockStream(s))
+    async def connect(self, peer_id, maddrs):
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+
         maddrs_bytes = [i.to_bytes() for i in maddrs]
         connect_req = p2pd_pb.ConnectRequest(
             peer=peer_id.to_bytes(),
@@ -134,15 +139,17 @@ class Client:
             type=p2pd_pb.Request.CONNECT,
             connect=connect_req,
         )
-        rwtor.write_msg(req)
+        data_bytes = serialize(req)
+        writer.write(data_bytes)
+
         resp = p2pd_pb.Response()
-        rwtor.read_msg(resp)
+        ret_bytes = await reader.read(BUFFER_SIZE)
+        deserialize(ret_bytes, resp)
         raise_if_failed(resp)
 
-        s.close()
+    async def stream_open(self, peer_id, protocols):
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-    def stream_open(self, peer_id, protocols):
-        s = self._new_control_conn()
         stream_open_req = p2pd_pb.StreamOpenRequest(
             peer=peer_id.to_bytes(),
             proto=protocols,
@@ -151,12 +158,14 @@ class Client:
             type=p2pd_pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
-        rwtor = PBReadWriter(SockStream(s))
-        rwtor.write_msg(req)
+        data_bytes = serialize(req)
+        writer.write(data_bytes)
+
         resp = p2pd_pb.Response()
-        rwtor.read_msg_safe(resp)
+        await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
+        ###
         stream_info = resp.streamInfo
 
         peer_id = PeerID(stream_info.peer)
@@ -164,4 +173,27 @@ class Client:
         protocol = stream_info.proto
 
         print(peer_id, maddr, protocol)
-        return s
+        return reader, writer
+
+
+async def test():
+    c = Client(control_path, listen_path)
+    peer_id, maddrs = await c.identify()
+    print(peer_id, maddrs)
+
+    peer_id_another = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
+    maddrs_another = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
+    await c.connect(peer_id_another, maddrs_another)
+
+    await c.stream_open(
+        peer_id_another,
+        [
+            "/generalRequest/1.0.0",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test())
+    loop.close()

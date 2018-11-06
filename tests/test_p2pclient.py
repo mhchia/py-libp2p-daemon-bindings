@@ -56,7 +56,6 @@ def test_client_integration():
     c.stream_open(
         peer_id,
         [
-            "/shardPeerRequest/1.0.0",
             "/generalRequest/1.0.0",
         ],
     )

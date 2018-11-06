@@ -120,9 +120,6 @@ class Client:
         peer_id = PeerID(peer_id_bytes)
 
         s.close()
-
-        print(peer_id)
-        print(maddrs)
         return peer_id, maddrs
 
     def connect(self, peer_id, maddrs):
@@ -160,4 +157,11 @@ class Client:
         rwtor.read_msg_safe(resp)
         raise_if_failed(resp)
 
-        s.close()
+        stream_info = resp.streamInfo
+
+        peer_id = PeerID(stream_info.peer)
+        maddr = Multiaddr(bytes_addr=stream_info.addr)
+        protocol = stream_info.proto
+
+        print(peer_id, maddr, protocol)
+        return s

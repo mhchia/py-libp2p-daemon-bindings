@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='p2pd.proto',
   package='p2pd.pb',
   syntax='proto2',
-  serialized_pb=_b('\n\np2pd.proto\x12\x07p2pd.pb\"\xc1\x02\n\x07Request\x12#\n\x04type\x18\x01 \x02(\x0e\x32\x15.p2pd.pb.Request.Type\x12(\n\x07\x63onnect\x18\x02 \x01(\x0b\x32\x17.p2pd.pb.ConnectRequest\x12.\n\nstreamOpen\x18\x03 \x01(\x0b\x32\x1a.p2pd.pb.StreamOpenRequest\x12\x34\n\rstreamHandler\x18\x04 \x01(\x0b\x32\x1d.p2pd.pb.StreamHandlerRequest\x12 \n\x03\x64ht\x18\x05 \x01(\x0b\x32\x13.p2pd.pb.DHTRequest\"_\n\x04Type\x12\x0c\n\x08IDENTIFY\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x0f\n\x0bSTREAM_OPEN\x10\x02\x12\x12\n\x0eSTREAM_HANDLER\x10\x03\x12\x07\n\x03\x44HT\x10\x04\x12\x0e\n\nLIST_PEERS\x10\x05\"\x8d\x02\n\x08Response\x12$\n\x04type\x18\x01 \x02(\x0e\x32\x16.p2pd.pb.Response.Type\x12%\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x16.p2pd.pb.ErrorResponse\x12\'\n\nstreamInfo\x18\x03 \x01(\x0b\x32\x13.p2pd.pb.StreamInfo\x12+\n\x08identify\x18\x04 \x01(\x0b\x32\x19.p2pd.pb.IdentifyResponse\x12!\n\x03\x64ht\x18\x05 \x01(\x0b\x32\x14.p2pd.pb.DHTResponse\x12 \n\x05peers\x18\x06 \x03(\x0b\x32\x11.p2pd.pb.PeerInfo\"\x19\n\x04Type\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\"-\n\x10IdentifyResponse\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"-\n\x0e\x43onnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"0\n\x11StreamOpenRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05proto\x18\x02 \x03(\t\"3\n\x14StreamHandlerRequest\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\r\n\x05proto\x18\x02 \x03(\t\"\x1c\n\rErrorResponse\x12\x0b\n\x03msg\x18\x01 \x02(\t\"7\n\nStreamInfo\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\x0c\n\x04\x61\x64\x64r\x18\x02 \x02(\x0c\x12\r\n\x05proto\x18\x03 \x02(\t\"\xc1\x02\n\nDHTRequest\x12&\n\x04type\x18\x01 \x02(\x0e\x32\x18.p2pd.pb.DHTRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63id\x18\x03 \x01(\x0c\x12\x0b\n\x03key\x18\x04 \x01(\t\x12\r\n\x05value\x18\x05 \x01(\x0c\x12\r\n\x05\x63ount\x18\x06 \x01(\x05\x12\x0f\n\x07timeout\x18\x07 \x01(\x03\"\xb3\x01\n\x04Type\x12\r\n\tFIND_PEER\x10\x00\x12 \n\x1c\x46IND_PEERS_CONNECTED_TO_PEER\x10\x01\x12\x12\n\x0e\x46IND_PROVIDERS\x10\x02\x12\x15\n\x11GET_CLOSEST_PEERS\x10\x03\x12\x12\n\x0eGET_PUBLIC_KEY\x10\x04\x12\r\n\tGET_VALUE\x10\x05\x12\x10\n\x0cSEARCH_VALUE\x10\x06\x12\r\n\tPUT_VALUE\x10\x07\x12\x0b\n\x07PROVIDE\x10\x08\"\x8d\x01\n\x0b\x44HTResponse\x12\'\n\x04type\x18\x01 \x02(\x0e\x32\x19.p2pd.pb.DHTResponse.Type\x12\x1f\n\x04peer\x18\x02 \x01(\x0b\x32\x11.p2pd.pb.PeerInfo\x12\r\n\x05value\x18\x03 \x01(\x0c\"%\n\x04Type\x12\t\n\x05\x42\x45GIN\x10\x00\x12\t\n\x05VALUE\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"%\n\x08PeerInfo\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c')
+  serialized_pb=_b('\n\np2pd.proto\x12\x07p2pd.pb\"\x84\x03\n\x07Request\x12#\n\x04type\x18\x01 \x02(\x0e\x32\x15.p2pd.pb.Request.Type\x12(\n\x07\x63onnect\x18\x02 \x01(\x0b\x32\x17.p2pd.pb.ConnectRequest\x12.\n\nstreamOpen\x18\x03 \x01(\x0b\x32\x1a.p2pd.pb.StreamOpenRequest\x12\x34\n\rstreamHandler\x18\x04 \x01(\x0b\x32\x1d.p2pd.pb.StreamHandlerRequest\x12 \n\x03\x64ht\x18\x05 \x01(\x0b\x32\x13.p2pd.pb.DHTRequest\x12\x30\n\x0b\x63onnManager\x18\x06 \x01(\x0b\x32\x1b.p2pd.pb.ConnManagerRequest\"p\n\x04Type\x12\x0c\n\x08IDENTIFY\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x0f\n\x0bSTREAM_OPEN\x10\x02\x12\x12\n\x0eSTREAM_HANDLER\x10\x03\x12\x07\n\x03\x44HT\x10\x04\x12\x0e\n\nLIST_PEERS\x10\x05\x12\x0f\n\x0b\x43ONNMANAGER\x10\x06\"\x8d\x02\n\x08Response\x12$\n\x04type\x18\x01 \x02(\x0e\x32\x16.p2pd.pb.Response.Type\x12%\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x16.p2pd.pb.ErrorResponse\x12\'\n\nstreamInfo\x18\x03 \x01(\x0b\x32\x13.p2pd.pb.StreamInfo\x12+\n\x08identify\x18\x04 \x01(\x0b\x32\x19.p2pd.pb.IdentifyResponse\x12!\n\x03\x64ht\x18\x05 \x01(\x0b\x32\x14.p2pd.pb.DHTResponse\x12 \n\x05peers\x18\x06 \x03(\x0b\x32\x11.p2pd.pb.PeerInfo\"\x19\n\x04Type\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\"-\n\x10IdentifyResponse\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"-\n\x0e\x43onnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"0\n\x11StreamOpenRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05proto\x18\x02 \x03(\t\"3\n\x14StreamHandlerRequest\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\r\n\x05proto\x18\x02 \x03(\t\"\x1c\n\rErrorResponse\x12\x0b\n\x03msg\x18\x01 \x02(\t\"7\n\nStreamInfo\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\x0c\n\x04\x61\x64\x64r\x18\x02 \x02(\x0c\x12\r\n\x05proto\x18\x03 \x02(\t\"\xc1\x02\n\nDHTRequest\x12&\n\x04type\x18\x01 \x02(\x0e\x32\x18.p2pd.pb.DHTRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63id\x18\x03 \x01(\x0c\x12\x0b\n\x03key\x18\x04 \x01(\t\x12\r\n\x05value\x18\x05 \x01(\x0c\x12\r\n\x05\x63ount\x18\x06 \x01(\x05\x12\x0f\n\x07timeout\x18\x07 \x01(\x03\"\xb3\x01\n\x04Type\x12\r\n\tFIND_PEER\x10\x00\x12 \n\x1c\x46IND_PEERS_CONNECTED_TO_PEER\x10\x01\x12\x12\n\x0e\x46IND_PROVIDERS\x10\x02\x12\x15\n\x11GET_CLOSEST_PEERS\x10\x03\x12\x12\n\x0eGET_PUBLIC_KEY\x10\x04\x12\r\n\tGET_VALUE\x10\x05\x12\x10\n\x0cSEARCH_VALUE\x10\x06\x12\r\n\tPUT_VALUE\x10\x07\x12\x0b\n\x07PROVIDE\x10\x08\"\x8d\x01\n\x0b\x44HTResponse\x12\'\n\x04type\x18\x01 \x02(\x0e\x32\x19.p2pd.pb.DHTResponse.Type\x12\x1f\n\x04peer\x18\x02 \x01(\x0b\x32\x11.p2pd.pb.PeerInfo\x12\r\n\x05value\x18\x03 \x01(\x0c\"%\n\x04Type\x12\t\n\x05\x42\x45GIN\x10\x00\x12\t\n\x05VALUE\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"%\n\x08PeerInfo\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"\x9f\x01\n\x12\x43onnManagerRequest\x12.\n\x04type\x18\x01 \x02(\x0e\x32 .p2pd.pb.ConnManagerRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03tag\x18\x03 \x01(\t\x12\x0e\n\x06weight\x18\x04 \x01(\x03\".\n\x04Type\x12\x0c\n\x08TAG_PEER\x10\x00\x12\x0e\n\nUNTAG_PEER\x10\x01\x12\x08\n\x04TRIM\x10\x02')
 )
 
 
@@ -54,11 +54,15 @@ _REQUEST_TYPE = _descriptor.EnumDescriptor(
       name='LIST_PEERS', index=5, number=5,
       options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='CONNMANAGER', index=6, number=6,
+      options=None,
+      type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=250,
-  serialized_end=345,
+  serialized_start=300,
+  serialized_end=412,
 )
 _sym_db.RegisterEnumDescriptor(_REQUEST_TYPE)
 
@@ -79,8 +83,8 @@ _RESPONSE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=592,
-  serialized_end=617,
+  serialized_start=659,
+  serialized_end=684,
 )
 _sym_db.RegisterEnumDescriptor(_RESPONSE_TYPE)
 
@@ -129,8 +133,8 @@ _DHTREQUEST_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1046,
-  serialized_end=1225,
+  serialized_start=1113,
+  serialized_end=1292,
 )
 _sym_db.RegisterEnumDescriptor(_DHTREQUEST_TYPE)
 
@@ -155,10 +159,36 @@ _DHTRESPONSE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1332,
-  serialized_end=1369,
+  serialized_start=1399,
+  serialized_end=1436,
 )
 _sym_db.RegisterEnumDescriptor(_DHTRESPONSE_TYPE)
+
+_CONNMANAGERREQUEST_TYPE = _descriptor.EnumDescriptor(
+  name='Type',
+  full_name='p2pd.pb.ConnManagerRequest.Type',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='TAG_PEER', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='UNTAG_PEER', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='TRIM', index=2, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=1591,
+  serialized_end=1637,
+)
+_sym_db.RegisterEnumDescriptor(_CONNMANAGERREQUEST_TYPE)
 
 
 _REQUEST = _descriptor.Descriptor(
@@ -203,6 +233,13 @@ _REQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='connManager', full_name='p2pd.pb.Request.connManager', index=5,
+      number=6, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -217,7 +254,7 @@ _REQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=24,
-  serialized_end=345,
+  serialized_end=412,
 )
 
 
@@ -283,8 +320,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=348,
-  serialized_end=617,
+  serialized_start=415,
+  serialized_end=684,
 )
 
 
@@ -321,8 +358,8 @@ _IDENTIFYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=619,
-  serialized_end=664,
+  serialized_start=686,
+  serialized_end=731,
 )
 
 
@@ -359,8 +396,8 @@ _CONNECTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=666,
-  serialized_end=711,
+  serialized_start=733,
+  serialized_end=778,
 )
 
 
@@ -397,8 +434,8 @@ _STREAMOPENREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=713,
-  serialized_end=761,
+  serialized_start=780,
+  serialized_end=828,
 )
 
 
@@ -435,8 +472,8 @@ _STREAMHANDLERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=763,
-  serialized_end=814,
+  serialized_start=830,
+  serialized_end=881,
 )
 
 
@@ -466,8 +503,8 @@ _ERRORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=816,
-  serialized_end=844,
+  serialized_start=883,
+  serialized_end=911,
 )
 
 
@@ -511,8 +548,8 @@ _STREAMINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=846,
-  serialized_end=901,
+  serialized_start=913,
+  serialized_end=968,
 )
 
 
@@ -585,8 +622,8 @@ _DHTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=904,
-  serialized_end=1225,
+  serialized_start=971,
+  serialized_end=1292,
 )
 
 
@@ -631,8 +668,8 @@ _DHTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1228,
-  serialized_end=1369,
+  serialized_start=1295,
+  serialized_end=1436,
 )
 
 
@@ -669,8 +706,61 @@ _PEERINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1371,
-  serialized_end=1408,
+  serialized_start=1438,
+  serialized_end=1475,
+)
+
+
+_CONNMANAGERREQUEST = _descriptor.Descriptor(
+  name='ConnManagerRequest',
+  full_name='p2pd.pb.ConnManagerRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='type', full_name='p2pd.pb.ConnManagerRequest.type', index=0,
+      number=1, type=14, cpp_type=8, label=2,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='peer', full_name='p2pd.pb.ConnManagerRequest.peer', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='tag', full_name='p2pd.pb.ConnManagerRequest.tag', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='weight', full_name='p2pd.pb.ConnManagerRequest.weight', index=3,
+      number=4, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _CONNMANAGERREQUEST_TYPE,
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1478,
+  serialized_end=1637,
 )
 
 _REQUEST.fields_by_name['type'].enum_type = _REQUEST_TYPE
@@ -678,6 +768,7 @@ _REQUEST.fields_by_name['connect'].message_type = _CONNECTREQUEST
 _REQUEST.fields_by_name['streamOpen'].message_type = _STREAMOPENREQUEST
 _REQUEST.fields_by_name['streamHandler'].message_type = _STREAMHANDLERREQUEST
 _REQUEST.fields_by_name['dht'].message_type = _DHTREQUEST
+_REQUEST.fields_by_name['connManager'].message_type = _CONNMANAGERREQUEST
 _REQUEST_TYPE.containing_type = _REQUEST
 _RESPONSE.fields_by_name['type'].enum_type = _RESPONSE_TYPE
 _RESPONSE.fields_by_name['error'].message_type = _ERRORRESPONSE
@@ -691,6 +782,8 @@ _DHTREQUEST_TYPE.containing_type = _DHTREQUEST
 _DHTRESPONSE.fields_by_name['type'].enum_type = _DHTRESPONSE_TYPE
 _DHTRESPONSE.fields_by_name['peer'].message_type = _PEERINFO
 _DHTRESPONSE_TYPE.containing_type = _DHTRESPONSE
+_CONNMANAGERREQUEST.fields_by_name['type'].enum_type = _CONNMANAGERREQUEST_TYPE
+_CONNMANAGERREQUEST_TYPE.containing_type = _CONNMANAGERREQUEST
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 DESCRIPTOR.message_types_by_name['IdentifyResponse'] = _IDENTIFYRESPONSE
@@ -702,6 +795,7 @@ DESCRIPTOR.message_types_by_name['StreamInfo'] = _STREAMINFO
 DESCRIPTOR.message_types_by_name['DHTRequest'] = _DHTREQUEST
 DESCRIPTOR.message_types_by_name['DHTResponse'] = _DHTRESPONSE
 DESCRIPTOR.message_types_by_name['PeerInfo'] = _PEERINFO
+DESCRIPTOR.message_types_by_name['ConnManagerRequest'] = _CONNMANAGERREQUEST
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Request = _reflection.GeneratedProtocolMessageType('Request', (_message.Message,), dict(
@@ -780,6 +874,13 @@ PeerInfo = _reflection.GeneratedProtocolMessageType('PeerInfo', (_message.Messag
   # @@protoc_insertion_point(class_scope:p2pd.pb.PeerInfo)
   ))
 _sym_db.RegisterMessage(PeerInfo)
+
+ConnManagerRequest = _reflection.GeneratedProtocolMessageType('ConnManagerRequest', (_message.Message,), dict(
+  DESCRIPTOR = _CONNMANAGERREQUEST,
+  __module__ = 'p2pd_pb2'
+  # @@protoc_insertion_point(class_scope:p2pd.pb.ConnManagerRequest)
+  ))
+_sym_db.RegisterMessage(ConnManagerRequest)
 
 
 # @@protoc_insertion_point(module_scope)

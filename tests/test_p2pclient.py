@@ -1,3 +1,8 @@
+import asyncio
+import os
+
+import pytest
+
 from p2pd.config import (
     control_path,
     listen_path,
@@ -47,18 +52,45 @@ def test_peer_id():
     assert peer_id != peer_id_3
 
 
-def test_client_integration():
-    c = Client(control_path, listen_path)
-    peer_id, maddrs = c.identify()
-    maddrs = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
-    peer_id = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
-    c.connect(peer_id, maddrs)
-    c.stream_open(
-        peer_id,
+def start_p2pd(control_path):
+    try:
+        os.unlink(control_path)
+    except FileNotFoundError:
+        pass
+    os.system("p2pd -sock={} &".format(control_path))
+
+
+
+@pytest.mark.asyncio
+async def test_client_integration():
+    control_path_0 = "/tmp/test_p2pd_control_0"
+    listen_path_0 = "/tmp/test_p2pd_listen_path_0"
+    control_path_1 = "/tmp/test_p2pd_control_1"
+    listen_path_1 = "/tmp/test_p2pd_listen_path_1"
+    os.system("killall p2pd")
+
+    start_p2pd(control_path_0)
+    start_p2pd(control_path_1)
+    await asyncio.sleep(2)
+    c0 = Client(control_path_0, listen_path_0)
+    peer_id_0, maddrs_0 = await c0.identify()
+    print("peer0: peer_id={}, maddrs={}".format(peer_id_0, maddrs_0))
+
+    c1 = Client(control_path_1, listen_path_1)
+    peer_id_1, maddrs_1 = await c1.identify()
+    print("peer1: peer_id={}, maddrs={}".format(peer_id_1, maddrs_1))
+
+    await c0.connect(peer_id_1, maddrs_1)
+
+    await c0.stream_open(
+        peer_id_1,
         [
-            "/generalRequest/1.0.0",
+            # "/generalRequest/1.0.0",
         ],
     )
 
+
+
 if __name__ == "__main__":
-    test_client_integration()
+    # test_client_integration()
+    pass

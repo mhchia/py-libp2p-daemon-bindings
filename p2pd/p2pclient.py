@@ -1,5 +1,7 @@
 import asyncio
-import socket
+import os
+import subprocess
+import time
 
 import base58
 
@@ -70,6 +72,41 @@ class PeerID:
         return pid
 
 
+class StreamInfo:
+    peer_id = None
+    addr = None
+    proto = None
+
+    def __init__(self, peer_id, addr, proto):
+        self.peer_id = peer_id
+        self.addr = addr
+        self.proto = proto
+
+    def __repr__(self):
+        return "<StreamInfo peer_id={} addr={} proto={}>".format(
+            self.peer_id,
+            self.addr,
+            self.proto,
+        )
+
+    def to_pb(self):
+        pb_msg = p2pd_pb.StreamInfo(
+            peer=self.peer_id.to_bytes(),
+            addr=self.addr.to_bytes(),
+            proto=self.proto,
+        )
+        return pb_msg
+
+    @classmethod
+    def from_pb(cls, pb_msg):
+        stream_info = StreamInfo(
+            peer_id=PeerID(pb_msg.peer),
+            addr=Multiaddr(bytes_addr=pb_msg.addr),
+            proto=pb_msg.proto,
+        )
+        return stream_info
+
+
 class ControlFailure(Exception):
     pass
 
@@ -81,6 +118,19 @@ def raise_if_failed(response):
                 response.error.msg,
             )
         )
+
+
+async def handle_stream(reader, writer):
+    data = await reader.read(BUFFER_SIZE)
+    # message = data.decode()
+    print("Received {!r}".format(data))
+
+    # print("Send: %r" % message)
+    # writer.write(data)
+    # await writer.drain()
+
+    print("Close the client socket")
+    writer.close()
 
 
 class Client:
@@ -95,12 +145,23 @@ class Client:
         self.control_path = control_path
         self.listen_path = listen_path
         # TODO: handlers
-        # TODO: listen sock
+        self.handlers = {}
 
-    def _new_control_conn(self):
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(self.control_path)
-        return s
+    async def _dispather(self, reader, writer):
+        # TODO: parse data and dispatch to handlers
+        data = await reader.read(BUFFER_SIZE)
+        # message = data.decode()
+        print("Received {!r}".format(data))
+
+        # print("Send: %r" % message)
+        # writer.write(data)
+        # await writer.drain()
+
+        print("Close the client socket")
+        writer.close()
+
+    async def listen(self):
+        self.listener = await asyncio.start_unix_server(self._dispather, self.listen_path)
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
@@ -165,35 +226,30 @@ class Client:
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
-        ###
-        stream_info = resp.streamInfo
+        pb_stream_info = resp.streamInfo
+        stream_info = StreamInfo.from_pb(pb_stream_info)
 
-        peer_id = PeerID(stream_info.peer)
-        maddr = Multiaddr(bytes_addr=stream_info.addr)
-        protocol = stream_info.proto
+        print(stream_info)
+        return stream_info, reader, writer
 
-        print(peer_id, maddr, protocol)
-        return reader, writer
+    async def stream_handler(self, proto, handler_cb):
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
 
+        stream_handler_req = p2pd_pb.StreamHandlerRequest(
+            path=self.listen_path,
+            proto=[proto],
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.STREAM_HANDLER,
+            streamHandler=stream_handler_req,
+        )
+        data_bytes = serialize(req)
+        writer.write(data_bytes)
 
-async def test():
-    c = Client(control_path, listen_path)
-    peer_id, maddrs = await c.identify()
-    print(peer_id, maddrs)
+        resp = p2pd_pb.Response()
+        ret_bytes = await reader.read(BUFFER_SIZE)
+        deserialize(ret_bytes, resp)
+        raise_if_failed(resp)
 
-    peer_id_another = PeerID.from_string("QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7")
-    maddrs_another = [Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10000")]
-    await c.connect(peer_id_another, maddrs_another)
-
-    await c.stream_open(
-        peer_id_another,
-        [
-            "/generalRequest/1.0.0",
-        ],
-    )
-
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test())
-    loop.close()
+        # if success, add the handler to the dict
+        self.handlers[proto] = handler_cb

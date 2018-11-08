@@ -68,29 +68,44 @@ async def test_client_integration():
     control_path_1 = "/tmp/test_p2pd_control_1"
     listen_path_1 = "/tmp/test_p2pd_listen_path_1"
     os.system("killall p2pd")
-
     start_p2pd(control_path_0)
     start_p2pd(control_path_1)
     await asyncio.sleep(2)
+
     c0 = Client(control_path_0, listen_path_0)
+    await c0.listen()
+
     peer_id_0, maddrs_0 = await c0.identify()
-    print("peer0: peer_id={}, maddrs={}".format(peer_id_0, maddrs_0))
 
     c1 = Client(control_path_1, listen_path_1)
     peer_id_1, maddrs_1 = await c1.identify()
-    print("peer1: peer_id={}, maddrs={}".format(peer_id_1, maddrs_1))
 
     await c0.connect(peer_id_1, maddrs_1)
 
-    await c0.stream_open(
+
+    async def handle_stream(reader, writer):
+        data = await reader.read(100)
+        # message = data.decode()
+        print("!@# Received {!r}".format(data))
+
+        # print("Send: %r" % message)
+        # writer.write(data)
+        # await writer.drain()
+
+        print("!@# Close the client socket")
+        writer.close()
+    await c1.stream_handler("123", handle_stream)
+
+    stream_info, reader, writer = await c0.stream_open(
         peer_id_1,
         [
-            # "/generalRequest/1.0.0",
+            "123",
         ],
     )
+    writer.write(b'yoyoyoyoyo')
 
 
 
 if __name__ == "__main__":
-    # test_client_integration()
+    # loop = asyncio.get_event_loop()
     pass

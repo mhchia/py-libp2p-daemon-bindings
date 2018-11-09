@@ -7,6 +7,9 @@ from p2pd.config import (
     control_path,
     listen_path,
 )
+from p2pd.constants import (
+    BUFFER_SIZE,
+)
 from p2pd.p2pclient import (
     Client,
     Multiaddr,
@@ -67,6 +70,14 @@ async def test_client_integration():
     listen_path_0 = "/tmp/test_p2pd_listen_path_0"
     control_path_1 = "/tmp/test_p2pd_control_1"
     listen_path_1 = "/tmp/test_p2pd_listen_path_1"
+    try:
+        os.unlink(listen_path_0)
+    except FileNotFoundError:
+        pass
+    try:
+        os.unlink(listen_path_1)
+    except FileNotFoundError:
+        pass
     os.system("killall p2pd")
     start_p2pd(control_path_0)
     start_p2pd(control_path_1)
@@ -78,23 +89,19 @@ async def test_client_integration():
     peer_id_0, maddrs_0 = await c0.identify()
 
     c1 = Client(control_path_1, listen_path_1)
+    await c1.listen()
     peer_id_1, maddrs_1 = await c1.identify()
 
     await c0.connect(peer_id_1, maddrs_1)
 
+    bytes_to_send = b"yoyoyoyoyog"
 
-    async def handle_stream(reader, writer):
-        data = await reader.read(100)
-        # message = data.decode()
-        print("!@# Received {!r}".format(data))
+    async def handle_proto(stream_info, reader, writer):
+        print("stream_info = {}".format(stream_info))
+        bytes_received = await reader.read(BUFFER_SIZE)
+        assert bytes_received == bytes_to_send
 
-        # print("Send: %r" % message)
-        # writer.write(data)
-        # await writer.drain()
-
-        print("!@# Close the client socket")
-        writer.close()
-    await c1.stream_handler("123", handle_stream)
+    await c1.stream_handler("123", handle_proto)
 
     stream_info, reader, writer = await c0.stream_open(
         peer_id_1,
@@ -102,8 +109,10 @@ async def test_client_integration():
             "123",
         ],
     )
-    writer.write(b'yoyoyoyoyo')
-
+    writer.write(bytes_to_send)
+    await writer.drain()  # TODO: confirm this behaviour
+    writer.close()
+    await asyncio.sleep(0.2)  # yield
 
 
 if __name__ == "__main__":

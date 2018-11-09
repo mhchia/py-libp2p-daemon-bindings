@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import subprocess
 import time
@@ -120,19 +121,6 @@ def raise_if_failed(response):
         )
 
 
-async def handle_stream(reader, writer):
-    data = await reader.read(BUFFER_SIZE)
-    # message = data.decode()
-    print("Received {!r}".format(data))
-
-    # print("Send: %r" % message)
-    # writer.write(data)
-    # await writer.drain()
-
-    print("Close the client socket")
-    writer.close()
-
-
 class Client:
     control_path = None
     listen_path = None
@@ -140,6 +128,8 @@ class Client:
 
     mutex_handlers = None
     handlers = None
+
+    logger = logging.getLogger('p2pclient.Client')
 
     def __init__(self, control_path, listen_path):
         self.control_path = control_path
@@ -149,16 +139,14 @@ class Client:
 
     async def _dispather(self, reader, writer):
         # TODO: parse data and dispatch to handlers
-        data = await reader.read(BUFFER_SIZE)
-        # message = data.decode()
-        print("Received {!r}".format(data))
-
-        # print("Send: %r" % message)
-        # writer.write(data)
-        # await writer.drain()
-
-        print("Close the client socket")
-        writer.close()
+        # data = await reader.read(BUFFER_SIZE)
+        # print("Received {!r}".format(data))
+        pb_stream_info = p2pd_pb.StreamInfo()
+        await read_pbmsg_safe(reader, pb_stream_info)
+        stream_info = StreamInfo.from_pb(pb_stream_info)
+        self.logger.info("Received %s", stream_info)
+        handler = self.handlers[stream_info.proto]
+        await handler(stream_info, reader, writer)
 
     async def listen(self):
         self.listener = await asyncio.start_unix_server(self._dispather, self.listen_path)

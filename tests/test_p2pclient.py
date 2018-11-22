@@ -16,7 +16,6 @@ from p2pclient.p2pclient import (
     PeerID,
 )
 from p2pclient.serialization import (
-    deserialize,
     read_pbmsg_safe,
     serialize,
 )

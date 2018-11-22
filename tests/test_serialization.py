@@ -2,6 +2,7 @@ import io
 
 import pytest
 
+
 from p2pclient.serialization import (
     read_byte,
     read_varint,
@@ -13,33 +14,39 @@ def test_serialize():
     pass
 
 
-def test_deserialize():
-    pass
-
-
 def test_pb_readwriter():
     pass
 
 
-def test_read_byte():
-    msg_bytes = b"123"
-    s = io.BytesIO(msg_bytes)
-    assert read_byte(s) == msg_bytes[0]
-    assert read_byte(s) == msg_bytes[1]
-    assert read_byte(s) == msg_bytes[2]
-    with pytest.raises(EOFError):
-        read_byte(s)
+@pytest.mark.parametrize(
+    "value, expected_result",
+    (
+        (0, b'\x00'),
+        (1, b'\x01'),
+        (128, b'\x80\x01'),
+        (2 ** 32, b'\x80\x80\x80\x80\x10'),
+        (2 ** 64 - 1, b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01'),
+    ),
+)
+def test_write_varint(value, expected_result):
+    s0 = io.BytesIO()
+    write_varint(s0, value)
+    assert s0.getvalue() == expected_result
 
 
 @pytest.mark.parametrize(
     "value",
     (0, 1, 128, 2 ** 32, 2 ** 64 - 1),
 )
-def test_read_varint(value):
+@pytest.mark.asyncio
+async def test_read_write_varint(value):
     s = io.BytesIO()
     write_varint(s, value)
-    s.seek(0,0)
-    result = read_varint(s)
+    s.seek(0, 0)
+    async def read_byte(s):
+        data = s.read(1)
+        return data[0]
+    result = await read_varint(s, read_byte)
     assert value == result
 
 

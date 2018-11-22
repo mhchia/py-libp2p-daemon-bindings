@@ -1,54 +1,36 @@
-from google.protobuf.internal.decoder import (
-    _DecodeVarint,
-)
-from google.protobuf.internal.encoder import (
-    _EncodeVarint,
-    _VarintBytes,
-)
-
-from p2pclient.constants import (
-    BUFFER_SIZE,
+from io import (
+    BytesIO,
 )
 
 
-def serialize(pb_msg):
-    size = pb_msg.ByteSize()
-    # FIXME: change to another implementation which is also compatible with binary.Uvarint?
-    size_prefix = _VarintBytes(size)
-    return size_prefix + pb_msg.SerializeToString()
+def write_varint(writer, integer):
+    # _EncodeVarint(writer.write, integer, True)
+    # TODO: handle negative integers
+    if integer < 0:
+        raise ValueError(f"Negative integer: {integer}")
+    while True:
+        value = integer & 0x7f
+        integer >>= 7
+        if integer != 0:
+            value |= 0x80
+        byte = value.to_bytes(1, 'big')
+        writer.write(byte)
+        if integer == 0:
+            break
 
 
-def deserialize(entire_bytes, msg):
-    # FIXME: change to another implementation which is also compatible with binary.Uvarint?
-    msg_len, new_pos = _DecodeVarint(entire_bytes, 0)
-    msg_bytes = entire_bytes[new_pos:(new_pos + msg_len)]
-    msg.ParseFromString(msg_bytes)
-    return msg
-
-
-def write_varint(s, integer):
-    _EncodeVarint(s.write, integer, True)
-    # while True:
-    #     value = integer & 0x7f
-    #     integer >>= 7
-    #     if integer != 0:
-    #         value |= 0x80
-    #     byte = value.to_bytes(1, 'big')
-    #     stream.write(byte)
-
-
-async def read_byte(s):
-    data = await s.readexactly(1)
+async def read_byte(reader):
+    data = await reader.readexactly(1)
     return data[0]
 
 
-async def read_varint(stream, read_byte):
+async def read_varint(reader, read_byte):
     iteration = 0
     chunk_bits = 7
     result = 0
     has_next = True
     while has_next:
-        c = await read_byte(stream)
+        c = await read_byte(reader)
         value = (c & 0x7f)
         result |= (value << (iteration * chunk_bits))
         has_next = (c & 0x80)
@@ -65,3 +47,11 @@ async def read_pbmsg_safe(s, pb_msg):
     len_msg_bytes = await read_varint(s, read_byte)
     msg_bytes = await s.readexactly(len_msg_bytes)
     pb_msg.ParseFromString(msg_bytes)
+
+
+def serialize(pb_msg):
+    size = pb_msg.ByteSize()
+    s = BytesIO()
+    write_varint(s, size)
+    size_prefix = s.getvalue()
+    return size_prefix + pb_msg.SerializeToString()

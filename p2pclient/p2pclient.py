@@ -16,7 +16,6 @@ from p2pclient.constants import (
     BUFFER_SIZE,
 )
 from p2pclient.serialization import (
-    deserialize,
     read_pbmsg_safe,
     serialize,
 )
@@ -155,8 +154,7 @@ class Client:
         writer.write(data_bytes)
 
         resp = p2pclient_pb.Response()
-        ret_bytes = await reader.read(BUFFER_SIZE)
-        deserialize(ret_bytes, resp)
+        await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
@@ -189,8 +187,7 @@ class Client:
         writer.write(data_bytes)
 
         resp = p2pclient_pb.Response()
-        ret_bytes = await reader.read(BUFFER_SIZE)
-        deserialize(ret_bytes, resp)
+        await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
     async def stream_open(self, peer_id, protocols):
@@ -232,8 +229,7 @@ class Client:
         writer.write(data_bytes)
 
         resp = p2pclient_pb.Response()
-        ret_bytes = await reader.read(BUFFER_SIZE)
-        deserialize(ret_bytes, resp)
+        await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
         # if success, add the handler to the dict

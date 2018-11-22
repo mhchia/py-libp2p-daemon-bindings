@@ -4,7 +4,6 @@ import pytest
 
 
 from p2pclient.serialization import (
-    read_byte,
     read_varint,
     write_varint,
 )
@@ -43,9 +42,11 @@ async def test_read_write_varint(value):
     s = io.BytesIO()
     write_varint(s, value)
     s.seek(0, 0)
+
     async def read_byte(s):
         data = s.read(1)
         return data[0]
+
     result = await read_varint(s, read_byte)
     assert value == result
 

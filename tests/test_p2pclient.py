@@ -3,10 +3,6 @@ import os
 
 import pytest
 
-from p2pclient.config import (
-    control_path,
-    listen_path,
-)
 from p2pclient.constants import (
     BUFFER_SIZE,
 )
@@ -15,11 +11,6 @@ from p2pclient.p2pclient import (
     Multiaddr,
     PeerID,
 )
-from p2pclient.serialization import (
-    read_pbmsg_safe,
-    serialize,
-)
-
 
 
 def test_multiaddr():
@@ -116,4 +107,3 @@ async def test_client_integration():
     await writer.drain()  # TODO: confirm this behaviour
     writer.close()
     await asyncio.sleep(0.2)  # yield
-

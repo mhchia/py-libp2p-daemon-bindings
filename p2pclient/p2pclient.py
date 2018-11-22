@@ -1,20 +1,10 @@
 import asyncio
 import logging
-import os
-import subprocess
-import time
 
 import base58
 
 import multiaddr
 
-from p2pclient.config import (
-    control_path,
-    listen_path,
-)
-from p2pclient.constants import (
-    BUFFER_SIZE,
-)
 from p2pclient.serialization import (
     read_pbmsg_safe,
     serialize,

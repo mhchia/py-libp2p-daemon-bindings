@@ -4,7 +4,6 @@ from io import (
 
 
 def write_varint(writer, integer):
-    # _EncodeVarint(writer.write, integer, True)
     # TODO: handle negative integers
     if integer < 0:
         raise ValueError(f"Negative integer: {integer}")

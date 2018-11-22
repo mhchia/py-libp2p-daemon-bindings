@@ -3,17 +3,22 @@ import os
 
 import pytest
 
-from p2pd.config import (
+from p2pclient.config import (
     control_path,
     listen_path,
 )
-from p2pd.constants import (
+from p2pclient.constants import (
     BUFFER_SIZE,
 )
-from p2pd.p2pclient import (
+from p2pclient.p2pclient import (
     Client,
     Multiaddr,
     PeerID,
+)
+from p2pclient.serialization import (
+    deserialize,
+    read_pbmsg_safe,
+    serialize,
 )
 
 
@@ -61,7 +66,6 @@ def start_p2pd(control_path):
     except FileNotFoundError:
         pass
     os.system("p2pd -sock={} &".format(control_path))
-
 
 
 @pytest.mark.asyncio
@@ -114,7 +118,3 @@ async def test_client_integration():
     writer.close()
     await asyncio.sleep(0.2)  # yield
 
-
-if __name__ == "__main__":
-    # loop = asyncio.get_event_loop()
-    pass

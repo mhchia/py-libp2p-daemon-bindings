@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from p2pd.serialization import (
+from p2pclient.serialization import (
     read_byte,
     read_varint,
     write_varint,

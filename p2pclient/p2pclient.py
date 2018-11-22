@@ -8,20 +8,20 @@ import base58
 
 import multiaddr
 
-from p2pd.config import (
+from p2pclient.config import (
     control_path,
     listen_path,
 )
-from p2pd.constants import (
+from p2pclient.constants import (
     BUFFER_SIZE,
 )
-from p2pd.serialization import (
+from p2pclient.serialization import (
     deserialize,
     read_pbmsg_safe,
     serialize,
 )
 
-import p2pd.pb.p2pd_pb2 as p2pd_pb
+import p2pclient.pb.p2pd_pb2 as p2pclient_pb
 
 
 class Multiaddr(multiaddr.Multiaddr):
@@ -91,7 +91,7 @@ class StreamInfo:
         )
 
     def to_pb(self):
-        pb_msg = p2pd_pb.StreamInfo(
+        pb_msg = p2pclient_pb.StreamInfo(
             peer=self.peer_id.to_bytes(),
             addr=self.addr.to_bytes(),
             proto=self.proto,
@@ -113,7 +113,7 @@ class ControlFailure(Exception):
 
 
 def raise_if_failed(response):
-    if response.type == p2pd_pb.Response.ERROR:
+    if response.type == p2pclient_pb.Response.ERROR:
         raise ControlFailure(
             "connect failed. msg={}".format(
                 response.error.msg,
@@ -137,27 +137,24 @@ class Client:
         # TODO: handlers
         self.handlers = {}
 
-    async def _dispather(self, reader, writer):
-        # TODO: parse data and dispatch to handlers
-        # data = await reader.read(BUFFER_SIZE)
-        # print("Received {!r}".format(data))
-        pb_stream_info = p2pd_pb.StreamInfo()
+    async def _dispatcher(self, reader, writer):
+        pb_stream_info = p2pclient_pb.StreamInfo()
         await read_pbmsg_safe(reader, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)
-        self.logger.info("Received %s", stream_info)
+        self.logger.info("New incoming stream: %s", stream_info)
         handler = self.handlers[stream_info.proto]
         await handler(stream_info, reader, writer)
 
     async def listen(self):
-        self.listener = await asyncio.start_unix_server(self._dispather, self.listen_path)
+        self.listener = await asyncio.start_unix_server(self._dispatcher, self.listen_path)
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
+        req = p2pclient_pb.Request(type=p2pclient_pb.Request.IDENTIFY)
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pd_pb.Response()
+        resp = p2pclient_pb.Response()
         ret_bytes = await reader.read(BUFFER_SIZE)
         deserialize(ret_bytes, resp)
         raise_if_failed(resp)
@@ -180,18 +177,18 @@ class Client:
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
         maddrs_bytes = [i.to_bytes() for i in maddrs]
-        connect_req = p2pd_pb.ConnectRequest(
+        connect_req = p2pclient_pb.ConnectRequest(
             peer=peer_id.to_bytes(),
             addrs=maddrs_bytes,
         )
-        req = p2pd_pb.Request(
-            type=p2pd_pb.Request.CONNECT,
+        req = p2pclient_pb.Request(
+            type=p2pclient_pb.Request.CONNECT,
             connect=connect_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pd_pb.Response()
+        resp = p2pclient_pb.Response()
         ret_bytes = await reader.read(BUFFER_SIZE)
         deserialize(ret_bytes, resp)
         raise_if_failed(resp)
@@ -199,18 +196,18 @@ class Client:
     async def stream_open(self, peer_id, protocols):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        stream_open_req = p2pd_pb.StreamOpenRequest(
+        stream_open_req = p2pclient_pb.StreamOpenRequest(
             peer=peer_id.to_bytes(),
             proto=protocols,
         )
-        req = p2pd_pb.Request(
-            type=p2pd_pb.Request.STREAM_OPEN,
+        req = p2pclient_pb.Request(
+            type=p2pclient_pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pd_pb.Response()
+        resp = p2pclient_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
@@ -223,18 +220,18 @@ class Client:
     async def stream_handler(self, proto, handler_cb):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        stream_handler_req = p2pd_pb.StreamHandlerRequest(
+        stream_handler_req = p2pclient_pb.StreamHandlerRequest(
             path=self.listen_path,
             proto=[proto],
         )
-        req = p2pd_pb.Request(
-            type=p2pd_pb.Request.STREAM_HANDLER,
+        req = p2pclient_pb.Request(
+            type=p2pclient_pb.Request.STREAM_HANDLER,
             streamHandler=stream_handler_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pd_pb.Response()
+        resp = p2pclient_pb.Response()
         ret_bytes = await reader.read(BUFFER_SIZE)
         deserialize(ret_bytes, resp)
         raise_if_failed(resp)

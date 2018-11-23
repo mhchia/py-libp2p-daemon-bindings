@@ -1,0 +1,32 @@
+language: python
+
+sudo: true
+
+python:
+  - "3.6"
+
+env:
+  - GOPACKAGE=go1.10.3.linux-amd64.tar.gz LIBP2P_DAEMON_REPO=github.com/libp2p/go-libp2p-daemon
+
+before_install:
+  # install go
+  - wget https://dl.google.com/go/$GOPACKAGE
+  - sudo tar -C /usr/local -xzf $GOPACKAGE
+  - export GOPATH=$HOME/go
+  - export GOROOT=/usr/local/go
+  - export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+
+install:
+  # install libp2p daemon
+  - go version
+  - go get $LIBP2P_DAEMON_REPO
+  - cd $GOPATH/src/$LIBP2P_DAEMON_REPO
+  - make bin
+  # install tox
+  - pip install tox
+
+before_script:
+  - cd -
+
+script:
+  - tox

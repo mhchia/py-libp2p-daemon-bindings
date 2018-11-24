@@ -55,7 +55,10 @@ def start_p2pd(control_path):
         os.unlink(control_path)
     except FileNotFoundError:
         pass
-    os.system("p2pd -sock={} &".format(control_path))
+    os.system("p2pd -sock={} -dht 2>&1 1>/tmp/p2pd_{}.log &".format(
+        control_path,
+        control_path[5:]
+    ))
 
 
 @pytest.mark.asyncio
@@ -107,3 +110,5 @@ async def test_client_integration():
     await writer.drain()  # TODO: confirm this behaviour
     writer.close()
     await asyncio.sleep(0.2)  # yield
+
+    await c0.find_peer(peer_id_1)

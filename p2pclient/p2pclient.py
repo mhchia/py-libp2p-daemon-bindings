@@ -10,7 +10,30 @@ from p2pclient.serialization import (
     serialize,
 )
 
-import p2pclient.pb.p2pd_pb2 as p2pclient_pb
+import p2pclient.pb.p2pd_pb2 as pb
+
+
+class ProtocolNoCheck:
+    """This class is a temporary workaround used for `add_protocol`. It bypasses
+    the checks on the attributes `code`, `size`, `name`, `vcode`
+    """
+    def __init__(self, code, size, name, vcode):
+        self.code = code
+        self.size = size
+        self.name = name
+        self.vcode = vcode
+
+
+P_P2P_CIRCUIT = 290
+
+multiaddr.protocols.add_protocol(
+    ProtocolNoCheck(
+        P_P2P_CIRCUIT,
+        0,
+        "p2p-circuit",
+        multiaddr.codec.code_to_varint(P_P2P_CIRCUIT),
+    )
+)
 
 
 class Multiaddr(multiaddr.Multiaddr):
@@ -80,7 +103,7 @@ class StreamInfo:
         )
 
     def to_pb(self):
-        pb_msg = p2pclient_pb.StreamInfo(
+        pb_msg = pb.StreamInfo(
             peer=self.peer_id.to_bytes(),
             addr=self.addr.to_bytes(),
             proto=self.proto,
@@ -89,7 +112,7 @@ class StreamInfo:
 
     @classmethod
     def from_pb(cls, pb_msg):
-        stream_info = StreamInfo(
+        stream_info = cls(
             peer_id=PeerID(pb_msg.peer),
             addr=Multiaddr(bytes_addr=pb_msg.addr),
             proto=pb_msg.proto,
@@ -97,12 +120,33 @@ class StreamInfo:
         return stream_info
 
 
+class PeerInfo:
+    peer_id = None
+    addrs = None
+
+    def __init__(self, peer_id, addrs):
+        self.peer_id = peer_id
+        self.addrs = addrs
+
+    def __repr__(self):
+        return "<PeerInfo peer_id={} addrs={}>".format(
+            self.peer_id,
+            self.addrs,
+        )
+
+    @classmethod
+    def from_pb(cls, peer_info_pb):
+        peer_id = PeerID(peer_info_pb.id)
+        addrs = [Multiaddr(bytes_addr=addr) for addr in peer_info_pb.addrs]
+        return cls(peer_id, addrs)
+
+
 class ControlFailure(Exception):
     pass
 
 
 def raise_if_failed(response):
-    if response.type == p2pclient_pb.Response.ERROR:
+    if response.type == pb.Response.ERROR:
         raise ControlFailure(
             "connect failed. msg={}".format(
                 response.error.msg,
@@ -127,7 +171,7 @@ class Client:
         self.handlers = {}
 
     async def _dispatcher(self, reader, writer):
-        pb_stream_info = p2pclient_pb.StreamInfo()
+        pb_stream_info = pb.StreamInfo()
         await read_pbmsg_safe(reader, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)
         self.logger.info("New incoming stream: %s", stream_info)
@@ -139,11 +183,11 @@ class Client:
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        req = p2pclient_pb.Request(type=p2pclient_pb.Request.IDENTIFY)
+        req = pb.Request(type=pb.Request.IDENTIFY)
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pclient_pb.Response()
+        resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
@@ -165,62 +209,87 @@ class Client:
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
         maddrs_bytes = [i.to_bytes() for i in maddrs]
-        connect_req = p2pclient_pb.ConnectRequest(
+        connect_req = pb.ConnectRequest(
             peer=peer_id.to_bytes(),
             addrs=maddrs_bytes,
         )
-        req = p2pclient_pb.Request(
-            type=p2pclient_pb.Request.CONNECT,
+        req = pb.Request(
+            type=pb.Request.CONNECT,
             connect=connect_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pclient_pb.Response()
+        resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
     async def stream_open(self, peer_id, protocols):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        stream_open_req = p2pclient_pb.StreamOpenRequest(
+        stream_open_req = pb.StreamOpenRequest(
             peer=peer_id.to_bytes(),
             proto=protocols,
         )
-        req = p2pclient_pb.Request(
-            type=p2pclient_pb.Request.STREAM_OPEN,
+        req = pb.Request(
+            type=pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pclient_pb.Response()
+        resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
         pb_stream_info = resp.streamInfo
         stream_info = StreamInfo.from_pb(pb_stream_info)
 
-        print(stream_info)
         return stream_info, reader, writer
 
     async def stream_handler(self, proto, handler_cb):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        stream_handler_req = p2pclient_pb.StreamHandlerRequest(
+        stream_handler_req = pb.StreamHandlerRequest(
             path=self.listen_path,
             proto=[proto],
         )
-        req = p2pclient_pb.Request(
-            type=p2pclient_pb.Request.STREAM_HANDLER,
+        req = pb.Request(
+            type=pb.Request.STREAM_HANDLER,
             streamHandler=stream_handler_req,
         )
         data_bytes = serialize(req)
         writer.write(data_bytes)
 
-        resp = p2pclient_pb.Response()
+        resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
         # if success, add the handler to the dict
         self.handlers[proto] = handler_cb
+
+    async def read_dht_response_stream(self, reader):
+        pass
+
+    async def find_peer(self, peer_id):
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.FIND_PEER,
+            peer=peer_id.to_bytes(),
+        )
+        req = pb.Request(
+            type=pb.Request.DHT,
+            dht=dht_req,
+        )
+        data_bytes = serialize(req)
+        writer.write(data_bytes)
+
+        resp = pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+        dht_resp = resp.dht
+        if dht_resp.type != dht_resp.VALUE:
+            raise ValueError("Type should be VALUE instead of f{dht_resp.type}")
+        pinfo = PeerInfo.from_pb(dht_resp.peer)
+        return pinfo

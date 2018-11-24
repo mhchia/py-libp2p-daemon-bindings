@@ -12,6 +12,5 @@ setup(
         "base58",
         "multiaddr",
         "protobuf",
-        "pytest",
     ],
 )

@@ -41,7 +41,6 @@ class Client:
     def __init__(self, control_path, listen_path):
         self.control_path = control_path
         self.listen_path = listen_path
-        # TODO: handlers
         self.handlers = {}
 
     async def _dispatcher(self, reader, writer):

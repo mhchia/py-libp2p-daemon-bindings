@@ -46,7 +46,7 @@ def spinup_p2pds(request):
 
     # teardown
     for _, p2pd_info in p2pd_procs.items():
-        p2pd_info.proc.kill()
+        p2pd_info.proc.terminate()
         p2pd_info.proc.wait()
 
 
@@ -55,12 +55,15 @@ def start_p2pd(control_path):
         os.unlink(control_path)
     except FileNotFoundError:
         pass
+    f_log = open('/tmp/p2pd_{}.log'.format(control_path[5:]), 'wb')
     return subprocess.Popen(
-        "p2pd -sock={} -dht 2>&1 1>/tmp/p2pd_{}.log".format(
-            control_path,
-            control_path[5:],
-        ),
-        shell=True,
+        [
+            "p2pd",
+            f"-sock={control_path}",
+            "-dht",
+        ],
+        stdout=f_log,
+        stderr=f_log,
     )
 
 

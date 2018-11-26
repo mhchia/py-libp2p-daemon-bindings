@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 
 from p2pclient.datastructures import (
@@ -68,7 +69,6 @@ class Client:
 
         maddrs = []
         for maddr_bytes in maddrs_bytes:
-            # addr is
             # maddr_str = str(maddr)[2:-1]
             # maddr_bytes_m = bytes.fromhex(maddr_str)
             maddr = Multiaddr(bytes_addr=maddr_bytes)
@@ -122,6 +122,16 @@ class Client:
 
     async def stream_handler(self, proto, handler_cb):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
+
+        # FIXME: should introduce type annotation to solve this elegantly
+        handler_sig = inspect.signature(handler_cb).parameters
+        if len(handler_sig) != 3:
+            raise ControlFailure(
+                "signature of the callback handler {} is wrong: {}".format(
+                    handler_cb,
+                    handler_sig,
+                )
+            )
 
         stream_handler_req = pb.StreamHandlerRequest(
             path=self.listen_path,

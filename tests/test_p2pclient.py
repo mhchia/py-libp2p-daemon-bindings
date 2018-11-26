@@ -7,51 +7,9 @@ import subprocess
 
 import pytest
 
-from p2pclient.constants import (
-    BUFFER_SIZE,
-)
 from p2pclient.p2pclient import (
     Client,
-    Multiaddr,
-    PeerID,
 )
-
-
-def test_multiaddr():
-    string_addr = "/ip4/127.0.0.1/tcp/10000"
-    bytes_addr = b"\x04\x7f\x00\x00\x01\x06'\x10"
-    # test initialized with `string_addr`
-    m = Multiaddr(string_addr=string_addr)
-    assert m.to_bytes() == bytes_addr
-    assert m.to_string() == string_addr
-    # test initialized with `bytes_addr`
-    m2 = Multiaddr(bytes_addr=bytes_addr)
-    assert m.to_bytes() == bytes_addr
-    assert m.to_string() == string_addr
-    # test both are the same
-    assert m == m2
-    # test not eqaul
-    assert m != Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10001")
-    assert m != Multiaddr(string_addr="/ip4/0.0.0.0/tcp/10000")
-    assert m != Multiaddr(string_addr="/ip4/127.0.0.1/udp/10000")
-
-
-def test_peer_id():
-    peer_id_string = "QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7"
-    peer_id_bytes = b'\x12 7\x87F.[\xb5\xb1o\xe5*\xc7\xb9\xbb\x11:"Z|j2\x8ad\x1b\xa6\xe5<Ip\xfe\xb4\xf5v'  # noqa: E501
-    # test initialized with bytes
-    peer_id = PeerID(peer_id_bytes)
-    assert peer_id.to_bytes() == peer_id_bytes
-    assert peer_id.to_string() == peer_id_string
-    # test initialized with string
-    peer_id_2 = PeerID.from_string(peer_id_string)
-    assert peer_id_2.to_bytes() == peer_id_bytes
-    assert peer_id_2.to_string() == peer_id_string
-    # test equal
-    assert peer_id == peer_id_2
-    # test not equal
-    peer_id_3 = PeerID.from_string("QmbmfNDEth7Ucvjuxiw3SP3E4PoJzbk7g4Ge6ZDigbCsNp")
-    assert peer_id != peer_id_3
 
 
 def start_p2pd(control_path):
@@ -74,6 +32,7 @@ P2PDInfo = namedtuple('P2PDInfo', ['proc', 'control_path', 'listen_path'])
 @pytest.yield_fixture(scope="function")
 def make_p2pd():
     p2pd_procs = {}
+
     def _make_p2pd(number):
         if number in p2pd_procs:
             p2pd_info = p2pd_procs[number]
@@ -116,8 +75,7 @@ async def test_client_integration(make_p2pd):
     bytes_to_send = b"yoyoyoyoyog"
 
     async def handle_proto(stream_info, reader, writer):
-        print("stream_info = {}".format(stream_info))
-        bytes_received = await reader.read(BUFFER_SIZE)
+        bytes_received = await reader.read(len(bytes_to_send))
         assert bytes_received == bytes_to_send
 
     await c1.stream_handler("123", handle_proto)
@@ -141,4 +99,3 @@ async def test_client_integration(make_p2pd):
 def test_abc(make_p2pd):
     control_path_1, listen_path_1 = make_p2pd(0)
     pass
-

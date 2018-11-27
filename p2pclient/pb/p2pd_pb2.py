@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='p2pd.proto',
   package='p2pd.pb',
   syntax='proto2',
-  serialized_pb=_b('\n\np2pd.proto\x12\x07p2pd.pb\"\xc5\x03\n\x07Request\x12#\n\x04type\x18\x01 \x02(\x0e\x32\x15.p2pd.pb.Request.Type\x12(\n\x07\x63onnect\x18\x02 \x01(\x0b\x32\x17.p2pd.pb.ConnectRequest\x12.\n\nstreamOpen\x18\x03 \x01(\x0b\x32\x1a.p2pd.pb.StreamOpenRequest\x12\x34\n\rstreamHandler\x18\x04 \x01(\x0b\x32\x1d.p2pd.pb.StreamHandlerRequest\x12 \n\x03\x64ht\x18\x05 \x01(\x0b\x32\x13.p2pd.pb.DHTRequest\x12\x30\n\x0b\x63onnManager\x18\x06 \x01(\x0b\x32\x1b.p2pd.pb.ConnManagerRequest\x12.\n\ndisconnect\x18\x07 \x01(\x0b\x32\x1a.p2pd.pb.DisconnectRequest\"\x80\x01\n\x04Type\x12\x0c\n\x08IDENTIFY\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x0f\n\x0bSTREAM_OPEN\x10\x02\x12\x12\n\x0eSTREAM_HANDLER\x10\x03\x12\x07\n\x03\x44HT\x10\x04\x12\x0e\n\nLIST_PEERS\x10\x05\x12\x0f\n\x0b\x43ONNMANAGER\x10\x06\x12\x0e\n\nDISCONNECT\x10\x07\"\x8d\x02\n\x08Response\x12$\n\x04type\x18\x01 \x02(\x0e\x32\x16.p2pd.pb.Response.Type\x12%\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x16.p2pd.pb.ErrorResponse\x12\'\n\nstreamInfo\x18\x03 \x01(\x0b\x32\x13.p2pd.pb.StreamInfo\x12+\n\x08identify\x18\x04 \x01(\x0b\x32\x19.p2pd.pb.IdentifyResponse\x12!\n\x03\x64ht\x18\x05 \x01(\x0b\x32\x14.p2pd.pb.DHTResponse\x12 \n\x05peers\x18\x06 \x03(\x0b\x32\x11.p2pd.pb.PeerInfo\"\x19\n\x04Type\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\"-\n\x10IdentifyResponse\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"-\n\x0e\x43onnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"0\n\x11StreamOpenRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05proto\x18\x02 \x03(\t\"3\n\x14StreamHandlerRequest\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\r\n\x05proto\x18\x02 \x03(\t\"\x1c\n\rErrorResponse\x12\x0b\n\x03msg\x18\x01 \x02(\t\"7\n\nStreamInfo\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\x0c\n\x04\x61\x64\x64r\x18\x02 \x02(\x0c\x12\r\n\x05proto\x18\x03 \x02(\t\"\xc1\x02\n\nDHTRequest\x12&\n\x04type\x18\x01 \x02(\x0e\x32\x18.p2pd.pb.DHTRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63id\x18\x03 \x01(\x0c\x12\x0b\n\x03key\x18\x04 \x01(\t\x12\r\n\x05value\x18\x05 \x01(\x0c\x12\r\n\x05\x63ount\x18\x06 \x01(\x05\x12\x0f\n\x07timeout\x18\x07 \x01(\x03\"\xb3\x01\n\x04Type\x12\r\n\tFIND_PEER\x10\x00\x12 \n\x1c\x46IND_PEERS_CONNECTED_TO_PEER\x10\x01\x12\x12\n\x0e\x46IND_PROVIDERS\x10\x02\x12\x15\n\x11GET_CLOSEST_PEERS\x10\x03\x12\x12\n\x0eGET_PUBLIC_KEY\x10\x04\x12\r\n\tGET_VALUE\x10\x05\x12\x10\n\x0cSEARCH_VALUE\x10\x06\x12\r\n\tPUT_VALUE\x10\x07\x12\x0b\n\x07PROVIDE\x10\x08\"\x8d\x01\n\x0b\x44HTResponse\x12\'\n\x04type\x18\x01 \x02(\x0e\x32\x19.p2pd.pb.DHTResponse.Type\x12\x1f\n\x04peer\x18\x02 \x01(\x0b\x32\x11.p2pd.pb.PeerInfo\x12\r\n\x05value\x18\x03 \x01(\x0c\"%\n\x04Type\x12\t\n\x05\x42\x45GIN\x10\x00\x12\t\n\x05VALUE\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"%\n\x08PeerInfo\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"\x9f\x01\n\x12\x43onnManagerRequest\x12.\n\x04type\x18\x01 \x02(\x0e\x32 .p2pd.pb.ConnManagerRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03tag\x18\x03 \x01(\t\x12\x0e\n\x06weight\x18\x04 \x01(\x03\".\n\x04Type\x12\x0c\n\x08TAG_PEER\x10\x00\x12\x0e\n\nUNTAG_PEER\x10\x01\x12\x08\n\x04TRIM\x10\x02\"!\n\x11\x44isconnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c')
+  serialized_pb=_b('\n\np2pd.proto\x12\x07p2pd.pb\"\xc5\x03\n\x07Request\x12#\n\x04type\x18\x01 \x02(\x0e\x32\x15.p2pd.pb.Request.Type\x12(\n\x07\x63onnect\x18\x02 \x01(\x0b\x32\x17.p2pd.pb.ConnectRequest\x12.\n\nstreamOpen\x18\x03 \x01(\x0b\x32\x1a.p2pd.pb.StreamOpenRequest\x12\x34\n\rstreamHandler\x18\x04 \x01(\x0b\x32\x1d.p2pd.pb.StreamHandlerRequest\x12 \n\x03\x64ht\x18\x05 \x01(\x0b\x32\x13.p2pd.pb.DHTRequest\x12\x30\n\x0b\x63onnManager\x18\x06 \x01(\x0b\x32\x1b.p2pd.pb.ConnManagerRequest\x12.\n\ndisconnect\x18\x07 \x01(\x0b\x32\x1a.p2pd.pb.DisconnectRequest\"\x80\x01\n\x04Type\x12\x0c\n\x08IDENTIFY\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x0f\n\x0bSTREAM_OPEN\x10\x02\x12\x12\n\x0eSTREAM_HANDLER\x10\x03\x12\x07\n\x03\x44HT\x10\x04\x12\x0e\n\nLIST_PEERS\x10\x05\x12\x0f\n\x0b\x43ONNMANAGER\x10\x06\x12\x0e\n\nDISCONNECT\x10\x07\"\x8d\x02\n\x08Response\x12$\n\x04type\x18\x01 \x02(\x0e\x32\x16.p2pd.pb.Response.Type\x12%\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x16.p2pd.pb.ErrorResponse\x12\'\n\nstreamInfo\x18\x03 \x01(\x0b\x32\x13.p2pd.pb.StreamInfo\x12+\n\x08identify\x18\x04 \x01(\x0b\x32\x19.p2pd.pb.IdentifyResponse\x12!\n\x03\x64ht\x18\x05 \x01(\x0b\x32\x14.p2pd.pb.DHTResponse\x12 \n\x05peers\x18\x06 \x03(\x0b\x32\x11.p2pd.pb.PeerInfo\"\x19\n\x04Type\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\"-\n\x10IdentifyResponse\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\">\n\x0e\x43onnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\"A\n\x11StreamOpenRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\r\n\x05proto\x18\x02 \x03(\t\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\"3\n\x14StreamHandlerRequest\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\r\n\x05proto\x18\x02 \x03(\t\"\x1c\n\rErrorResponse\x12\x0b\n\x03msg\x18\x01 \x02(\t\"7\n\nStreamInfo\x12\x0c\n\x04peer\x18\x01 \x02(\x0c\x12\x0c\n\x04\x61\x64\x64r\x18\x02 \x02(\x0c\x12\r\n\x05proto\x18\x03 \x02(\t\"\xc1\x02\n\nDHTRequest\x12&\n\x04type\x18\x01 \x02(\x0e\x32\x18.p2pd.pb.DHTRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63id\x18\x03 \x01(\x0c\x12\x0b\n\x03key\x18\x04 \x01(\t\x12\r\n\x05value\x18\x05 \x01(\x0c\x12\r\n\x05\x63ount\x18\x06 \x01(\x05\x12\x0f\n\x07timeout\x18\x07 \x01(\x03\"\xb3\x01\n\x04Type\x12\r\n\tFIND_PEER\x10\x00\x12 \n\x1c\x46IND_PEERS_CONNECTED_TO_PEER\x10\x01\x12\x12\n\x0e\x46IND_PROVIDERS\x10\x02\x12\x15\n\x11GET_CLOSEST_PEERS\x10\x03\x12\x12\n\x0eGET_PUBLIC_KEY\x10\x04\x12\r\n\tGET_VALUE\x10\x05\x12\x10\n\x0cSEARCH_VALUE\x10\x06\x12\r\n\tPUT_VALUE\x10\x07\x12\x0b\n\x07PROVIDE\x10\x08\"\x8d\x01\n\x0b\x44HTResponse\x12\'\n\x04type\x18\x01 \x02(\x0e\x32\x19.p2pd.pb.DHTResponse.Type\x12\x1f\n\x04peer\x18\x02 \x01(\x0b\x32\x11.p2pd.pb.PeerInfo\x12\r\n\x05value\x18\x03 \x01(\x0c\"%\n\x04Type\x12\t\n\x05\x42\x45GIN\x10\x00\x12\t\n\x05VALUE\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"%\n\x08PeerInfo\x12\n\n\x02id\x18\x01 \x02(\x0c\x12\r\n\x05\x61\x64\x64rs\x18\x02 \x03(\x0c\"\x9f\x01\n\x12\x43onnManagerRequest\x12.\n\x04type\x18\x01 \x02(\x0e\x32 .p2pd.pb.ConnManagerRequest.Type\x12\x0c\n\x04peer\x18\x02 \x01(\x0c\x12\x0b\n\x03tag\x18\x03 \x01(\t\x12\x0e\n\x06weight\x18\x04 \x01(\x03\".\n\x04Type\x12\x0c\n\x08TAG_PEER\x10\x00\x12\x0e\n\nUNTAG_PEER\x10\x01\x12\x08\n\x04TRIM\x10\x02\"!\n\x11\x44isconnectRequest\x12\x0c\n\x04peer\x18\x01 \x02(\x0c')
 )
 
 
@@ -137,8 +137,8 @@ _DHTREQUEST_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1178,
-  serialized_end=1357,
+  serialized_start=1212,
+  serialized_end=1391,
 )
 _sym_db.RegisterEnumDescriptor(_DHTREQUEST_TYPE)
 
@@ -163,8 +163,8 @@ _DHTRESPONSE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1464,
-  serialized_end=1501,
+  serialized_start=1498,
+  serialized_end=1535,
 )
 _sym_db.RegisterEnumDescriptor(_DHTRESPONSE_TYPE)
 
@@ -189,8 +189,8 @@ _CONNMANAGERREQUEST_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1656,
-  serialized_end=1702,
+  serialized_start=1690,
+  serialized_end=1736,
 )
 _sym_db.RegisterEnumDescriptor(_CONNMANAGERREQUEST_TYPE)
 
@@ -395,6 +395,13 @@ _CONNECTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='timeout', full_name='p2pd.pb.ConnectRequest.timeout', index=2,
+      number=3, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -408,7 +415,7 @@ _CONNECTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=798,
-  serialized_end=843,
+  serialized_end=860,
 )
 
 
@@ -433,6 +440,13 @@ _STREAMOPENREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='timeout', full_name='p2pd.pb.StreamOpenRequest.timeout', index=2,
+      number=3, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -445,8 +459,8 @@ _STREAMOPENREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=845,
-  serialized_end=893,
+  serialized_start=862,
+  serialized_end=927,
 )
 
 
@@ -483,8 +497,8 @@ _STREAMHANDLERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=895,
-  serialized_end=946,
+  serialized_start=929,
+  serialized_end=980,
 )
 
 
@@ -514,8 +528,8 @@ _ERRORRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=948,
-  serialized_end=976,
+  serialized_start=982,
+  serialized_end=1010,
 )
 
 
@@ -559,8 +573,8 @@ _STREAMINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=978,
-  serialized_end=1033,
+  serialized_start=1012,
+  serialized_end=1067,
 )
 
 
@@ -633,8 +647,8 @@ _DHTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1036,
-  serialized_end=1357,
+  serialized_start=1070,
+  serialized_end=1391,
 )
 
 
@@ -679,8 +693,8 @@ _DHTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1360,
-  serialized_end=1501,
+  serialized_start=1394,
+  serialized_end=1535,
 )
 
 
@@ -717,8 +731,8 @@ _PEERINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1503,
-  serialized_end=1540,
+  serialized_start=1537,
+  serialized_end=1574,
 )
 
 
@@ -770,8 +784,8 @@ _CONNMANAGERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1543,
-  serialized_end=1702,
+  serialized_start=1577,
+  serialized_end=1736,
 )
 
 
@@ -801,8 +815,8 @@ _DISCONNECTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1704,
-  serialized_end=1737,
+  serialized_start=1738,
+  serialized_end=1771,
 )
 
 _REQUEST.fields_by_name['type'].enum_type = _REQUEST_TYPE

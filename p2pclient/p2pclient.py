@@ -179,7 +179,7 @@ class Client:
             return [dht_resp]
 
         if dht_resp.type != dht_resp.BEGIN:
-            raise ControlFailure("Type should be BEGIN instead of f{dht_resp.type}")
+            raise ControlFailure(f"Type should be BEGIN instead of {dht_resp.type}")
         # BEGIN/END stream
         resps = []
         while True:
@@ -197,7 +197,6 @@ class Client:
             type=pb.DHTRequest.FIND_PEER,
             peer=peer_id.to_bytes(),
         )
-
         resps = await self._do_dht(dht_req)
         if len(resps) != 1:
             raise ControlFailure(f"should only get one response from `find_peer`, resps={resps}")
@@ -216,13 +215,66 @@ class Client:
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
-        pinfos = []
-        for dht_resp in resps:
-            try:
-                pinfo = dht_resp.peer
-            except AttributeError as e:
-                raise ControlFailure(
-                    f"dht_resp should contains peer info: dht_resp={dht_resp}, e={e}"
-                )
-            pinfos.append(PeerInfo.from_pb(pinfo))
+
+        # TODO: maybe change these checks to a validator pattern
+        try:
+            pinfos = [dht_resp.peer for dht_resp in resps]
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains peer info: resps={resps}, e={e}"
+            )
         return pinfos
+
+    async def find_providers(self, content_id_bytes, count):
+        """GET_CLOSEST_PEERS
+        """
+        # TODO: should have another class ContendID
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.FIND_PROVIDERS,
+            cid=content_id_bytes,
+            count=count,
+        )
+        resps = await self._do_dht(dht_req)
+        # TODO: maybe change these checks to a validator pattern
+        try:
+            pinfos = [dht_resp.peer for dht_resp in resps]
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains peer info: resps={resps}, e={e}"
+            )
+        return pinfos
+
+    async def get_closest_peers(self, key):
+        """GET_CLOSEST_PEERS
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.GET_CLOSEST_PEERS,
+            key=key,
+        )
+        resps = await self._do_dht(dht_req)
+        try:
+            peer_ids = [PeerID(dht_resp.value) for dht_resp in resps]
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains `value`: resps={resps}, e={e}"
+            )
+        return peer_ids
+
+    async def get_public_key(self, peer_id):
+        """GET_PUBLIC_KEY
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.GET_PUBLIC_KEY,
+            peer=peer_id.to_bytes(),
+        )
+        resps = await self._do_dht(dht_req)
+        if len(resps) != 1:
+            raise ControlFailure(f"should only get one response, resps={resps}")
+        try:
+                # TODO: parse the public key with another class?
+            public_key = resps[0].value
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains `value`: resps={resps}, e={e}"
+            )
+        return public_key

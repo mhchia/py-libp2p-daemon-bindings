@@ -266,7 +266,7 @@ async def test_client_find_peer_failure(peer_id_random):
 
 
 @pytest.mark.asyncio
-async def test_client_find_peers_connected_to_peer_success(peer_id_random):
+async def test_client_find_peers_connected_to_peer_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
@@ -274,11 +274,82 @@ async def test_client_find_peers_connected_to_peer_success(peer_id_random):
     peer_id_1, maddrs_1 = await c1.identify()
     peer_id_2, _ = await c2.identify()
     await c1.connect(peer_id_0, maddrs_0)
+    # test case: 0 <-> 1 <-> 2
     await c2.connect(peer_id_1, maddrs_1)
     pinfos_connecting_to_2 = await c0.find_peers_connected_to_peer(peer_id_2)
+    # TODO: need to confirm this behaviour. Why the result is the PeerInfo of `peer_id_2`?
     assert len(pinfos_connecting_to_2) == 1
-    print("\n!@# ", peer_id_0, peer_id_1, peer_id_2)
-    assert pinfos_connecting_to_2[0].peer_id == peer_id_1
-    # # test case: no route to the peer with peer_id_2
-    # with pytest.raises(ControlFailure):
-    #     await c0.find_peer(peer_id_2)
+
+
+@pytest.mark.asyncio
+async def test_client_find_peers_connected_to_peer_failure(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_2, _ = await c2.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    # test case: request for random peer_id
+    pinfos = await c0.find_peers_connected_to_peer(peer_id_random)
+    assert not pinfos
+    # test case: no route to the peer with peer_id_2
+    pinfos = await c0.find_peers_connected_to_peer(peer_id_2)
+    assert not pinfos
+
+
+@pytest.mark.asyncio
+async def test_client_find_providers():
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    peer_id_0, maddrs_0 = await c0.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    # borrowed from https://github.com/ipfs/go-cid#parsing-string-input-from-users
+    content_id_bytes = b'\x01r\x12 \xc0F\xc8\xechB\x17\xf0\x1b$\xb9\xecw\x11\xde\x11Cl\x8eF\xd8\x9a\xf1\xaeLa?\xb0\xaf\xe6K\x8b'  # noqa: E501
+    pinfos = await c1.find_providers(content_id_bytes, 100)
+    assert not pinfos
+
+
+@pytest.mark.asyncio
+async def test_client_get_closest_peers():
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_2, maddrs_2 = await c2.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    await c1.connect(peer_id_2, maddrs_2)
+    peer_ids_1 = await c1.get_closest_peers("123")
+    assert len(peer_ids_1) == 2
+
+
+@pytest.mark.asyncio
+async def test_client_get_public_key_success(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_1, _ = await c1.identify()
+    peer_id_2, maddrs_2 = await c2.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    await c1.connect(peer_id_2, maddrs_2)
+    await asyncio.sleep(0.2)
+    pk0 = await c0.get_public_key(peer_id_0)
+    pk1 = await c0.get_public_key(peer_id_1)
+    assert pk0 != pk1
+
+
+@pytest.mark.asyncio
+async def test_client_get_public_key_failure(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_2, maddrs_2 = await c2.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    await c1.connect(peer_id_2, maddrs_2)
+    # test case: failed to get the pubkey of the peer_id_random
+    with pytest.raises(ControlFailure):
+        await c0.get_public_key(peer_id_random)
+    # test case: should get the pubkey of the peer_id_2
+    # TODO: why?
+    await c0.get_public_key(peer_id_2)

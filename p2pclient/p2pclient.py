@@ -20,6 +20,10 @@ class ControlFailure(Exception):
     pass
 
 
+class DispatchFailure(Exception):
+    pass
+
+
 def raise_if_failed(response):
     if response.type == pb.Response.ERROR:
         raise ControlFailure(
@@ -49,8 +53,16 @@ class Client:
         await read_pbmsg_safe(reader, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)
         self.logger.info("New incoming stream: %s", stream_info)
-        handler = self.handlers[stream_info.proto]
+        try:
+            handler = self.handlers[stream_info.proto]
+        except KeyError as e:
+            raise DispatchFailure(e)
         await handler(stream_info, reader, writer)
+
+    async def _write_pb(self, writer, data_pb):
+        data_bytes = serialize(data_pb)
+        writer.write(data_bytes)
+        await writer.drain()
 
     async def listen(self):
         self.listener = await asyncio.start_unix_server(self._dispatcher, self.listen_path)
@@ -58,8 +70,7 @@ class Client:
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         req = pb.Request(type=pb.Request.IDENTIFY)
-        data_bytes = serialize(req)
-        writer.write(data_bytes)
+        await self._write_pb(writer, req)
 
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -90,8 +101,7 @@ class Client:
             type=pb.Request.CONNECT,
             connect=connect_req,
         )
-        data_bytes = serialize(req)
-        writer.write(data_bytes)
+        await self._write_pb(writer, req)
 
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -108,8 +118,7 @@ class Client:
             type=pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
-        data_bytes = serialize(req)
-        writer.write(data_bytes)
+        await self._write_pb(writer, req)
 
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -141,8 +150,7 @@ class Client:
             type=pb.Request.STREAM_HANDLER,
             streamHandler=stream_handler_req,
         )
-        data_bytes = serialize(req)
-        writer.write(data_bytes)
+        await self._write_pb(writer, req)
 
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -151,28 +159,70 @@ class Client:
         # if success, add the handler to the dict
         self.handlers[proto] = handler_cb
 
-    async def read_dht_response_stream(self, reader):
-        pass
-
-    async def find_peer(self, peer_id):
+    async def _do_dht(self, dht_req):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.FIND_PEER,
-            peer=peer_id.to_bytes(),
-        )
         req = pb.Request(
             type=pb.Request.DHT,
             dht=dht_req,
         )
-        data_bytes = serialize(req)
-        writer.write(data_bytes)
-
+        await self._write_pb(writer, req)
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
-        dht_resp = resp.dht
-        if dht_resp.type != dht_resp.VALUE:
-            raise ValueError("Type should be VALUE instead of f{dht_resp.type}")
-        pinfo = PeerInfo.from_pb(dht_resp.peer)
-        return pinfo
+        try:
+            dht_resp = resp.dht
+        except AttributeError as e:
+            raise ControlFailure(f"resp should contains dht: resp={resp}, e={e}")
+
+        if dht_resp.type == dht_resp.VALUE:
+            return [dht_resp]
+
+        if dht_resp.type != dht_resp.BEGIN:
+            raise ControlFailure("Type should be BEGIN instead of f{dht_resp.type}")
+        # BEGIN/END stream
+        resps = []
+        while True:
+            dht_resp = pb.DHTResponse()
+            await read_pbmsg_safe(reader, dht_resp)
+            if dht_resp.type == dht_resp.END:
+                break
+            resps.append(dht_resp)
+        return resps
+
+    async def find_peer(self, peer_id):
+        """FIND_PEER
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.FIND_PEER,
+            peer=peer_id.to_bytes(),
+        )
+
+        resps = await self._do_dht(dht_req)
+        if len(resps) != 1:
+            raise ControlFailure(f"should only get one response from `find_peer`, resps={resps}")
+        dht_resp = resps[0]
+        try:
+            pinfo = dht_resp.peer
+        except AttributeError as e:
+            raise ControlFailure(f"dht_resp should contains peer info: dht_resp={dht_resp}, e={e}")
+        return PeerInfo.from_pb(pinfo)
+
+    async def find_peers_connected_to_peer(self, peer_id):
+        """FIND_PEERS_CONNECTED_TO_PEER
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.FIND_PEERS_CONNECTED_TO_PEER,
+            peer=peer_id.to_bytes(),
+        )
+        resps = await self._do_dht(dht_req)
+        pinfos = []
+        for dht_resp in resps:
+            try:
+                pinfo = dht_resp.peer
+            except AttributeError as e:
+                raise ControlFailure(
+                    f"dht_resp should contains peer info: dht_resp={dht_resp}, e={e}"
+                )
+            pinfos.append(PeerInfo.from_pb(pinfo))
+        return pinfos

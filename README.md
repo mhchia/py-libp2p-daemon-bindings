@@ -12,9 +12,6 @@ Methods
 - [x] `StreamOpen`
 - [x] `StreamHandler` - Register
 - [x] `StreamHandler` - Inbound stream
-- [x] Ensure reader/writer are closed correctly
-- [x] Ensure we are using asyncio correctly
-- [x] Refactor the structures
-- [x] More tests
-- [ ] DHT ops
+- [x] DHT ops
 - [ ] Conn manager ops
+- [ ] PubSub ops

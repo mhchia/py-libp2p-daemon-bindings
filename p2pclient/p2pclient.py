@@ -278,3 +278,58 @@ class Client:
                 f"dht_resp should contains `value`: resps={resps}, e={e}"
             )
         return public_key
+
+    async def get_value(self, key):
+        """GET_VALUE
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.GET_VALUE,
+            key=key,
+        )
+        resps = await self._do_dht(dht_req)
+        if len(resps) != 1:
+            raise ControlFailure(f"should only get one response, resps={resps}")
+        try:
+                # TODO: parse the public key with another class?
+            value = resps[0].value
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains `value`: resps={resps}, e={e}"
+            )
+        return value
+
+    async def search_value(self, key):
+        """GET_VALUE
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.SEARCH_VALUE,
+            key=key,
+        )
+        resps = await self._do_dht(dht_req)
+        try:
+            # TODO: parse the public key with another class?
+            values = [resp.value for resp in resps]
+        except AttributeError as e:
+            raise ControlFailure(
+                f"dht_resp should contains `value`: resps={resps}, e={e}"
+            )
+        return values
+
+    async def put_value(self, key, value):
+        """PUT_VALUE
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.PUT_VALUE,
+            key=key,
+            value=value,
+        )
+        resps = await self._do_dht(dht_req)
+        print(resps)
+        # try:
+        #     # TODO: parse the public key with another class?
+        #     values = [resp.value for resp in resps]
+        # except AttributeError as e:
+        #     raise ControlFailure(
+        #         f"dht_resp should contains `value`: resps={resps}, e={e}"
+        #     )
+        # return values

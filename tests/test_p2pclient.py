@@ -397,3 +397,20 @@ async def test_client_put_value():
     #        to receive the key in hex string?
     with pytest.raises(ControlFailure):
         await c0.put_value(key, value)
+
+
+@pytest.mark.asyncio
+async def test_client_provide():
+    c0 = await make_p2pclient(0)
+    peer_id_0, maddrs_0 = await c0.identify()
+    c1 = await make_p2pclient(1)
+    await c1.connect(peer_id_0, maddrs_0)
+    # test case: no providers
+    content_id_bytes = b'\x01r\x12 \xc0F\xc8\xechB\x17\xf0\x1b$\xb9\xecw\x11\xde\x11Cl\x8eF\xd8\x9a\xf1\xaeLa?\xb0\xaf\xe6K\x8b'  # noqa: E501
+    pinfos_empty = await c1.find_providers(content_id_bytes, 100)
+    assert not pinfos_empty
+    # test case: c0 provides
+    await c0.provide(content_id_bytes)
+    pinfos = await c1.find_providers(content_id_bytes, 100)
+    assert len(pinfos) == 1
+    assert pinfos[0].peer_id == peer_id_0

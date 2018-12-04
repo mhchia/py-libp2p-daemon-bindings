@@ -218,7 +218,7 @@ class Client:
 
         # TODO: maybe change these checks to a validator pattern
         try:
-            pinfos = [dht_resp.peer for dht_resp in resps]
+            pinfos = [PeerInfo.from_pb(dht_resp.peer) for dht_resp in resps]
         except AttributeError as e:
             raise ControlFailure(
                 f"dht_resp should contains peer info: resps={resps}, e={e}"
@@ -226,7 +226,7 @@ class Client:
         return pinfos
 
     async def find_providers(self, content_id_bytes, count):
-        """GET_CLOSEST_PEERS
+        """FIND_PROVIDERS
         """
         # TODO: should have another class ContendID
         dht_req = pb.DHTRequest(
@@ -237,7 +237,7 @@ class Client:
         resps = await self._do_dht(dht_req)
         # TODO: maybe change these checks to a validator pattern
         try:
-            pinfos = [dht_resp.peer for dht_resp in resps]
+            pinfos = [PeerInfo.from_pb(dht_resp.peer) for dht_resp in resps]
         except AttributeError as e:
             raise ControlFailure(
                 f"dht_resp should contains peer info: resps={resps}, e={e}"
@@ -299,7 +299,7 @@ class Client:
         return value
 
     async def search_value(self, key):
-        """GET_VALUE
+        """SEARCH_VALUE
         """
         dht_req = pb.DHTRequest(
             type=pb.DHTRequest.SEARCH_VALUE,
@@ -325,11 +325,20 @@ class Client:
         )
         resps = await self._do_dht(dht_req)
         print(resps)
-        # try:
-        #     # TODO: parse the public key with another class?
-        #     values = [resp.value for resp in resps]
-        # except AttributeError as e:
-        #     raise ControlFailure(
-        #         f"dht_resp should contains `value`: resps={resps}, e={e}"
-        #     )
-        # return values
+
+    async def provide(self, cid):
+        """PROVIDE
+        """
+        dht_req = pb.DHTRequest(
+            type=pb.DHTRequest.PROVIDE,
+            cid=cid,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        req = pb.Request(
+            type=pb.Request.DHT,
+            dht=dht_req,
+        )
+        await self._write_pb(writer, req)
+        resp = pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)

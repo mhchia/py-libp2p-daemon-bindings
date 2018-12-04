@@ -323,8 +323,15 @@ class Client:
             key=key,
             value=value,
         )
-        resps = await self._do_dht(dht_req)
-        print(resps)
+        req = pb.Request(
+            type=pb.Request.DHT,
+            dht=dht_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
 
     async def provide(self, cid):
         """PROVIDE
@@ -333,11 +340,11 @@ class Client:
             type=pb.DHTRequest.PROVIDE,
             cid=cid,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
         req = pb.Request(
             type=pb.Request.DHT,
             dht=dht_req,
         )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
         await self._write_pb(writer, req)
         resp = pb.Response()
         await read_pbmsg_safe(reader, resp)

@@ -13,7 +13,8 @@ from p2pclient.serialization import (
     serialize,
 )
 
-import p2pclient.pb.p2pd_pb2 as pb
+import p2pclient.pb.p2pd_pb2 as p2pd_pb
+import p2pclient.pb.crypto_pb2 as crypto_pb
 
 
 class ControlFailure(Exception):
@@ -25,7 +26,7 @@ class DispatchFailure(Exception):
 
 
 def raise_if_failed(response):
-    if response.type == pb.Response.ERROR:
+    if response.type == p2pd_pb.Response.ERROR:
         raise ControlFailure(
             "connect failed. msg={}".format(
                 response.error.msg,
@@ -49,7 +50,7 @@ class Client:
         self.handlers = {}
 
     async def _dispatcher(self, reader, writer):
-        pb_stream_info = pb.StreamInfo()
+        pb_stream_info = p2pd_pb.StreamInfo()
         await read_pbmsg_safe(reader, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)
         self.logger.info("New incoming stream: %s", stream_info)
@@ -69,10 +70,10 @@ class Client:
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        req = pb.Request(type=pb.Request.IDENTIFY)
+        req = p2pd_pb.Request(type= p2pd_pb.Request.IDENTIFY)
         await self._write_pb(writer, req)
 
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
@@ -93,34 +94,34 @@ class Client:
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
         maddrs_bytes = [i.to_bytes() for i in maddrs]
-        connect_req = pb.ConnectRequest(
+        connect_req = p2pd_pb.ConnectRequest(
             peer=peer_id.to_bytes(),
             addrs=maddrs_bytes,
         )
-        req = pb.Request(
-            type=pb.Request.CONNECT,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.CONNECT,
             connect=connect_req,
         )
         await self._write_pb(writer, req)
 
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
     async def stream_open(self, peer_id, protocols):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        stream_open_req = pb.StreamOpenRequest(
+        stream_open_req = p2pd_pb.StreamOpenRequest(
             peer=peer_id.to_bytes(),
             proto=protocols,
         )
-        req = pb.Request(
-            type=pb.Request.STREAM_OPEN,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
         await self._write_pb(writer, req)
 
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
@@ -142,17 +143,17 @@ class Client:
                 )
             )
 
-        stream_handler_req = pb.StreamHandlerRequest(
+        stream_handler_req = p2pd_pb.StreamHandlerRequest(
             path=self.listen_path,
             proto=[proto],
         )
-        req = pb.Request(
-            type=pb.Request.STREAM_HANDLER,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.STREAM_HANDLER,
             streamHandler=stream_handler_req,
         )
         await self._write_pb(writer, req)
 
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
@@ -161,12 +162,12 @@ class Client:
 
     async def _do_dht(self, dht_req):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        req = pb.Request(
-            type=pb.Request.DHT,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         await self._write_pb(writer, req)
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
@@ -183,7 +184,7 @@ class Client:
         # BEGIN/END stream
         resps = []
         while True:
-            dht_resp = pb.DHTResponse()
+            dht_resp = p2pd_pb.DHTResponse()
             await read_pbmsg_safe(reader, dht_resp)
             if dht_resp.type == dht_resp.END:
                 break
@@ -193,8 +194,8 @@ class Client:
     async def find_peer(self, peer_id):
         """FIND_PEER
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.FIND_PEER,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.FIND_PEER,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -210,8 +211,8 @@ class Client:
     async def find_peers_connected_to_peer(self, peer_id):
         """FIND_PEERS_CONNECTED_TO_PEER
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.FIND_PEERS_CONNECTED_TO_PEER,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.FIND_PEERS_CONNECTED_TO_PEER,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -229,8 +230,8 @@ class Client:
         """FIND_PROVIDERS
         """
         # TODO: should have another class ContendID
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.FIND_PROVIDERS,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.FIND_PROVIDERS,
             cid=content_id_bytes,
             count=count,
         )
@@ -247,8 +248,8 @@ class Client:
     async def get_closest_peers(self, key):
         """GET_CLOSEST_PEERS
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.GET_CLOSEST_PEERS,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.GET_CLOSEST_PEERS,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -263,8 +264,8 @@ class Client:
     async def get_public_key(self, peer_id):
         """GET_PUBLIC_KEY
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.GET_PUBLIC_KEY,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.GET_PUBLIC_KEY,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -272,18 +273,20 @@ class Client:
             raise ControlFailure(f"should only get one response, resps={resps}")
         try:
                 # TODO: parse the public key with another class?
-            public_key = resps[0].value
+            public_key_pb_bytes = resps[0].value
         except AttributeError as e:
             raise ControlFailure(
                 f"dht_resp should contains `value`: resps={resps}, e={e}"
             )
-        return public_key
+        public_key_pb = crypto_pb.PublicKey()
+        public_key_pb.ParseFromString(public_key_pb_bytes)
+        return public_key_pb
 
     async def get_value(self, key):
         """GET_VALUE
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.GET_VALUE,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.GET_VALUE,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -301,8 +304,8 @@ class Client:
     async def search_value(self, key):
         """SEARCH_VALUE
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.SEARCH_VALUE,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.SEARCH_VALUE,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -318,34 +321,34 @@ class Client:
     async def put_value(self, key, value):
         """PUT_VALUE
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.PUT_VALUE,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.PUT_VALUE,
             key=key,
             value=value,
         )
-        req = pb.Request(
-            type=pb.Request.DHT,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         await self._write_pb(writer, req)
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
     async def provide(self, cid):
         """PROVIDE
         """
-        dht_req = pb.DHTRequest(
-            type=pb.DHTRequest.PROVIDE,
+        dht_req = p2pd_pb.DHTRequest(
+            type= p2pd_pb.DHTRequest.PROVIDE,
             cid=cid,
         )
-        req = pb.Request(
-            type=pb.Request.DHT,
+        req = p2pd_pb.Request(
+            type= p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         await self._write_pb(writer, req)
-        resp = pb.Response()
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)

@@ -1,51 +1,10 @@
 import base58
 
-import multiaddr
-
-import p2pclient.pb.p2pd_pb2 as pb
-
-
-class ProtocolNoCheck:
-    """This class is a temporary workaround used for `add_protocol`. It bypasses
-    the checks on the attributes `code`, `size`, `name`, `vcode`
-    """
-    def __init__(self, code, size, name, vcode):
-        self.code = code
-        self.size = size
-        self.name = name
-        self.vcode = vcode
-
-
-P_P2P_CIRCUIT = 290
-
-multiaddr.protocols.add_protocol(
-    ProtocolNoCheck(
-        P_P2P_CIRCUIT,
-        0,
-        "p2p-circuit",
-        multiaddr.codec.code_to_varint(P_P2P_CIRCUIT),
-    )
+from multiaddr import (
+    Multiaddr,
 )
 
-
-class Multiaddr(multiaddr.Multiaddr):
-    """Currently use `multiaddr.Multiaddr` as the backend.
-    """
-
-    def __init__(self, *, bytes_addr=None, string_addr=None):
-        # e.g. maddr_bytes = b'\x04\x7f\x00\x00\x01\x06\xc2\xc9'
-        if bytes_addr is not None:
-            maddr_hex = bytes_addr.hex()  # '047f00000106c2c9'
-            bytes_addr = maddr_hex.encode()  # b'047f00000106c2c9'
-        super().__init__(bytes_addr=bytes_addr, string_addr=string_addr)
-
-    def to_bytes(self):
-        strange_bytes = super().to_bytes()  # b'047f00000106c2c9'
-        maddr_hex = str(strange_bytes)[2:-1]  # '047f00000106c2c9'
-        return bytes.fromhex(maddr_hex)
-
-    def to_string(self):
-        return multiaddr.codec.bytes_to_string(self._bytes)
+import p2pclient.pb.p2pd_pb2 as pb
 
 
 class PeerID:
@@ -106,7 +65,7 @@ class StreamInfo:
     def from_pb(cls, pb_msg):
         stream_info = cls(
             peer_id=PeerID(pb_msg.peer),
-            addr=Multiaddr(bytes_addr=pb_msg.addr),
+            addr=Multiaddr(pb_msg.addr),
             proto=pb_msg.proto,
         )
         return stream_info
@@ -129,5 +88,5 @@ class PeerInfo:
     @classmethod
     def from_pb(cls, peer_info_pb):
         peer_id = PeerID(peer_info_pb.id)
-        addrs = [Multiaddr(bytes_addr=addr) for addr in peer_info_pb.addrs]
+        addrs = [Multiaddr(addr) for addr in peer_info_pb.addrs]
         return cls(peer_id, addrs)

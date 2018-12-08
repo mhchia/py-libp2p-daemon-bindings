@@ -1,26 +1,6 @@
 from p2pclient.p2pclient import (
-    Multiaddr,
     PeerID,
 )
-
-
-def test_multiaddr():
-    string_addr = "/ip4/127.0.0.1/tcp/10000"
-    bytes_addr = b"\x04\x7f\x00\x00\x01\x06'\x10"
-    # test initialized with `string_addr`
-    m = Multiaddr(string_addr=string_addr)
-    assert m.to_bytes() == bytes_addr
-    assert m.to_string() == string_addr
-    # test initialized with `bytes_addr`
-    m2 = Multiaddr(bytes_addr=bytes_addr)
-    assert m.to_bytes() == bytes_addr
-    assert m.to_string() == string_addr
-    # test both are the same
-    assert m == m2
-    # test not eqaul
-    assert m != Multiaddr(string_addr="/ip4/127.0.0.1/tcp/10001")
-    assert m != Multiaddr(string_addr="/ip4/0.0.0.0/tcp/10000")
-    assert m != Multiaddr(string_addr="/ip4/127.0.0.1/udp/10000")
 
 
 def test_peer_id():

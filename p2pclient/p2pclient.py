@@ -2,8 +2,11 @@ import asyncio
 import inspect
 import logging
 
-from p2pclient.datastructures import (
+from multiaddr import (
     Multiaddr,
+)
+
+from p2pclient.datastructures import (
     PeerID,
     PeerInfo,
     StreamInfo,
@@ -83,7 +86,7 @@ class Client:
         for maddr_bytes in maddrs_bytes:
             # maddr_str = str(maddr)[2:-1]
             # maddr_bytes_m = bytes.fromhex(maddr_str)
-            maddr = Multiaddr(bytes_addr=maddr_bytes)
+            maddr = Multiaddr(maddr_bytes)
             assert maddr.to_bytes() == maddr_bytes
             maddrs.append(maddr)
         peer_id = PeerID(peer_id_bytes)

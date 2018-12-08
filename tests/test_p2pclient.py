@@ -8,8 +8,11 @@ import time
 
 import pytest
 
-from p2pclient.datastructures import (
+from multiaddr import (
     Multiaddr,
+)
+
+from p2pclient.datastructures import (
     PeerID,
 )
 from p2pclient.p2pclient import (
@@ -31,9 +34,6 @@ def peer_id_random():
 
 @pytest.fixture(scope="function", autouse=True)
 def spinup_p2pds(request):
-    """Spin up `NUM_P2PD` p2pds at the first test, to reduce the waiting time to spin up
-    p2pds every time
-    """
     for i in range(NUM_P2PD):
         control_path = f"/tmp/test_p2pd_control_{i}"
         listen_path = f"/tmp/test_p2pd_listen_path_{i}"
@@ -112,7 +112,7 @@ async def test_client_connect_failure(peer_id_random):
         await c0.connect(peer_id_1, [])
     # test case: wrong maddrs
     with pytest.raises(ControlFailure):
-        await c0.connect(peer_id_1, [Multiaddr(string_addr="/ip4/127.0.0.1/udp/0")])
+        await c0.connect(peer_id_1, [Multiaddr("/ip4/127.0.0.1/udp/0")])
 
 
 @pytest.mark.asyncio

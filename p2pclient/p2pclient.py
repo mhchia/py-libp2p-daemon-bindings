@@ -324,9 +324,13 @@ class Client:
     async def put_value(self, key, value):
         """PUT_VALUE
         """
+        # To bypass utf8 encoding: try to escape the non-utf8 string
+        # Then, unescape the serialized bytes, try to send it over.
+        from google.protobuf import text_encoding
+        key_escaped = text_encoding.CEscape(key, as_utf8=False)
         dht_req = p2pd_pb.DHTRequest(
             type= p2pd_pb.DHTRequest.PUT_VALUE,
-            key=key,
+            key=key_escaped,
             value=value,
         )
         req = p2pd_pb.Request(
@@ -334,7 +338,29 @@ class Client:
             dht=dht_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        await self._write_pb(writer, req)
+
+        from io import BytesIO
+        from p2pclient.serialization import write_varint
+
+        # this data bytes is generated with the escaped key string
+        # lets turn it back to unicode and unescape it
+
+        data_bytes_utf8 = req.SerializeToString()  # in utf-8
+        data_bytes_str = data_bytes_utf8.decode('iso-8859-1')
+        data_bytes = text_encoding.CUnescape(data_bytes_str)
+        # FIXME: failed: [libprotobuf ERROR google/protobuf/wire_format_lite.cc:626] String field 'p2pd.pb.DHTRequest.key' contains invalid UTF-8 data when parsing a protocol buffer. Use the 'bytes' type if you intend to send raw bytes.  # noqa: E501
+        # req_t = p2pd_pb.Request()
+        # req_t.ParseFromString(data_bytes)
+
+        size = len(data_bytes)
+        s = BytesIO()
+        write_varint(s, size)
+        size_prefix = s.getvalue()
+        # assert size == len(data_bytes)
+        data = size_prefix + data_bytes
+        writer.write(data)
+        # await writer.drain()
+
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)

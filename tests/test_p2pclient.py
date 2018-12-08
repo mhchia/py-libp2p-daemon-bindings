@@ -336,6 +336,12 @@ async def test_client_get_public_key_success(peer_id_random):
     pk0 = await c0.get_public_key(peer_id_0)
     pk1 = await c0.get_public_key(peer_id_1)
     assert pk0 != pk1
+    import multihash
+    key_bytes = pk0.Data
+    algo = multihash.Func.sha2_256
+    mh_digest = multihash.digest(key_bytes, algo)
+    print("!@# mh_digest={}, peer_id_0={}".format(mh_digest.encode(), peer_id_0.to_bytes()))
+
 
 
 @pytest.mark.asyncio
@@ -377,26 +383,32 @@ async def test_client_search_value():
     key_not_existing = "/123/456"
     # test case: no peer in table
     with pytest.raises(ControlFailure):
-        await c0.get_value(key_not_existing)
+        await c0.search_value(key_not_existing)
     peer_id_0, maddrs_0 = await c0.identify()
     await c1.connect(peer_id_0, maddrs_0)
-    # test case: routing not found
-    with pytest.raises(ControlFailure):
-        await c0.get_value(key_not_existing)
+    pinfos = await c0.search_value(key_not_existing)
+    assert len(pinfos) == 0
 
 
 @pytest.mark.asyncio
 async def test_client_put_value():
+    return
     c0 = await make_p2pclient(0)
+    peer_id_0, maddrs_0 = await c0.identify()
     # valid pk in multihash format: code=11(sha)
-    key = "/pk/\x11\x04\x0b\x0b\x0b\x0b"
-    value = b"123"
-    # the key here is just a random key who is a valid utf-8, but it is not corresponding to
-    # our key: msg=public key does not match storage key.
-    # FIXME: the key in the protobuf should be a bytes type instead. Or, the daemon should be able
-    #        to receive the key in hex string?
-    with pytest.raises(ControlFailure):
-        await c0.put_value(key, value)
+    # key = "/pk/\x11\x04\x0b\x0b\x0b\x0b"
+
+    pk0 = await c0.get_public_key(peer_id_0)
+    import multihash
+    # make the `key`
+    algo = multihash.Func.sha2_256
+    value = pk0.Data
+    mh_digest = multihash.digest(value, algo)
+    mh_digest_bytes = mh_digest.encode()
+    # turn the bytes directly to unicodes with `ios-8859-1`
+    key_bytes_in_str = mh_digest_bytes.decode('iso-8859-1')
+    key = "/pk/" + key_bytes_in_str
+    await c0.put_value(key, value)
 
 
 @pytest.mark.asyncio

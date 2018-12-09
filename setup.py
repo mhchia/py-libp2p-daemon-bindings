@@ -10,7 +10,7 @@ setup(
     packages=["p2pclient"],
     install_requires=[
         "base58",
-        "multiaddr",
+        "py-multiaddr",  # use the forked one temporarily
         "protobuf",
     ],
 )

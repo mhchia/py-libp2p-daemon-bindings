@@ -1,4 +1,5 @@
 import asyncio
+import binascii
 import inspect
 import logging
 
@@ -73,7 +74,7 @@ class Client:
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
-        req = p2pd_pb.Request(type= p2pd_pb.Request.IDENTIFY)
+        req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
         await self._write_pb(writer, req)
 
         resp = p2pd_pb.Response()
@@ -84,10 +85,7 @@ class Client:
 
         maddrs = []
         for maddr_bytes in maddrs_bytes:
-            # maddr_str = str(maddr)[2:-1]
-            # maddr_bytes_m = bytes.fromhex(maddr_str)
-            maddr = Multiaddr(maddr_bytes)
-            assert maddr.to_bytes() == maddr_bytes
+            maddr = Multiaddr(binascii.hexlify(maddr_bytes))
             maddrs.append(maddr)
         peer_id = PeerID(peer_id_bytes)
 
@@ -96,13 +94,13 @@ class Client:
     async def connect(self, peer_id, maddrs):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 
-        maddrs_bytes = [i.to_bytes() for i in maddrs]
+        maddrs_bytes = [binascii.unhexlify(i.to_bytes()) for i in maddrs]
         connect_req = p2pd_pb.ConnectRequest(
             peer=peer_id.to_bytes(),
             addrs=maddrs_bytes,
         )
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.CONNECT,
+            type=p2pd_pb.Request.CONNECT,
             connect=connect_req,
         )
         await self._write_pb(writer, req)
@@ -119,7 +117,7 @@ class Client:
             proto=protocols,
         )
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.STREAM_OPEN,
+            type=p2pd_pb.Request.STREAM_OPEN,
             streamOpen=stream_open_req,
         )
         await self._write_pb(writer, req)
@@ -151,7 +149,7 @@ class Client:
             proto=[proto],
         )
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.STREAM_HANDLER,
+            type=p2pd_pb.Request.STREAM_HANDLER,
             streamHandler=stream_handler_req,
         )
         await self._write_pb(writer, req)
@@ -166,7 +164,7 @@ class Client:
     async def _do_dht(self, dht_req):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.DHT,
+            type=p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         await self._write_pb(writer, req)
@@ -198,7 +196,7 @@ class Client:
         """FIND_PEER
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.FIND_PEER,
+            type=p2pd_pb.DHTRequest.FIND_PEER,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -215,7 +213,7 @@ class Client:
         """FIND_PEERS_CONNECTED_TO_PEER
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.FIND_PEERS_CONNECTED_TO_PEER,
+            type=p2pd_pb.DHTRequest.FIND_PEERS_CONNECTED_TO_PEER,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -234,7 +232,7 @@ class Client:
         """
         # TODO: should have another class ContendID
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.FIND_PROVIDERS,
+            type=p2pd_pb.DHTRequest.FIND_PROVIDERS,
             cid=content_id_bytes,
             count=count,
         )
@@ -252,7 +250,7 @@ class Client:
         """GET_CLOSEST_PEERS
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.GET_CLOSEST_PEERS,
+            type=p2pd_pb.DHTRequest.GET_CLOSEST_PEERS,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -268,7 +266,7 @@ class Client:
         """GET_PUBLIC_KEY
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.GET_PUBLIC_KEY,
+            type=p2pd_pb.DHTRequest.GET_PUBLIC_KEY,
             peer=peer_id.to_bytes(),
         )
         resps = await self._do_dht(dht_req)
@@ -289,7 +287,7 @@ class Client:
         """GET_VALUE
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.GET_VALUE,
+            type=p2pd_pb.DHTRequest.GET_VALUE,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -308,7 +306,7 @@ class Client:
         """SEARCH_VALUE
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.SEARCH_VALUE,
+            type=p2pd_pb.DHTRequest.SEARCH_VALUE,
             key=key,
         )
         resps = await self._do_dht(dht_req)
@@ -325,12 +323,12 @@ class Client:
         """PUT_VALUE
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.PUT_VALUE,
+            type=p2pd_pb.DHTRequest.PUT_VALUE,
             key=key,
             value=value,
         )
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.DHT,
+            type=p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)
@@ -343,11 +341,11 @@ class Client:
         """PROVIDE
         """
         dht_req = p2pd_pb.DHTRequest(
-            type= p2pd_pb.DHTRequest.PROVIDE,
+            type=p2pd_pb.DHTRequest.PROVIDE,
             cid=cid,
         )
         req = p2pd_pb.Request(
-            type= p2pd_pb.Request.DHT,
+            type=p2pd_pb.Request.DHT,
             dht=dht_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)

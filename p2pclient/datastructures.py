@@ -1,3 +1,5 @@
+import binascii
+
 import base58
 
 from multiaddr import (
@@ -56,7 +58,7 @@ class StreamInfo:
     def to_pb(self):
         pb_msg = pb.StreamInfo(
             peer=self.peer_id.to_bytes(),
-            addr=self.addr.to_bytes(),
+            addr=binascii.unhexlify(self.addr.to_bytes()),
             proto=self.proto,
         )
         return pb_msg
@@ -65,7 +67,7 @@ class StreamInfo:
     def from_pb(cls, pb_msg):
         stream_info = cls(
             peer_id=PeerID(pb_msg.peer),
-            addr=Multiaddr(pb_msg.addr),
+            addr=Multiaddr(binascii.hexlify(pb_msg.addr)),
             proto=pb_msg.proto,
         )
         return stream_info

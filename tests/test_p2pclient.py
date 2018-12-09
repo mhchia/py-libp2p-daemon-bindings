@@ -12,6 +12,8 @@ from multiaddr import (
     Multiaddr,
 )
 
+import multihash
+
 from p2pclient.datastructures import (
     PeerID,
 )
@@ -318,7 +320,7 @@ async def test_client_get_closest_peers():
     peer_id_2, maddrs_2 = await c2.identify()
     await c1.connect(peer_id_0, maddrs_0)
     await c1.connect(peer_id_2, maddrs_2)
-    peer_ids_1 = await c1.get_closest_peers("123")
+    peer_ids_1 = await c1.get_closest_peers(b"123")
     assert len(peer_ids_1) == 2
 
 
@@ -359,7 +361,7 @@ async def test_client_get_public_key_failure(peer_id_random):
 async def test_client_get_value():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
-    key_not_existing = "/123/456"
+    key_not_existing = b"/123/456"
     # test case: no peer in table
     with pytest.raises(ControlFailure):
         await c0.get_value(key_not_existing)
@@ -374,29 +376,38 @@ async def test_client_get_value():
 async def test_client_search_value():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
-    key_not_existing = "/123/456"
+    key_not_existing = b"/123/456"
     # test case: no peer in table
     with pytest.raises(ControlFailure):
-        await c0.get_value(key_not_existing)
+        await c0.search_value(key_not_existing)
     peer_id_0, maddrs_0 = await c0.identify()
     await c1.connect(peer_id_0, maddrs_0)
-    # test case: routing not found
-    with pytest.raises(ControlFailure):
-        await c0.get_value(key_not_existing)
+    # test case: non-existing key
+    pinfos = await c0.search_value(key_not_existing)
+    assert len(pinfos) == 0
 
 
 @pytest.mark.asyncio
 async def test_client_put_value():
     c0 = await make_p2pclient(0)
-    # valid pk in multihash format: code=11(sha)
-    key = "/pk/\x11\x04\x0b\x0b\x0b\x0b"
-    value = b"123"
-    # the key here is just a random key who is a valid utf-8, but it is not corresponding to
-    # our key: msg=public key does not match storage key.
-    # FIXME: the key in the protobuf should be a bytes type instead. Or, the daemon should be able
-    #        to receive the key in hex string?
+    c1 = await make_p2pclient(1)
+    peer_id_0, maddrs_0 = await c0.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+
+    # test case: valid key
+    pk0 = await c0.get_public_key(peer_id_0)
+    # make the `key` from pk0
+    algo = multihash.Func.sha2_256
+    value = pk0.Data
+    mh_digest = multihash.digest(value, algo)
+    mh_digest_bytes = mh_digest.encode()
+    key = b"/pk/" + mh_digest_bytes
+    await c0.put_value(key, value)
+
+    # test case: invalid key
+    key_invalid = b"/123/456"
     with pytest.raises(ControlFailure):
-        await c0.put_value(key, value)
+        await c0.put_value(key_invalid, key_invalid)
 
 
 @pytest.mark.asyncio

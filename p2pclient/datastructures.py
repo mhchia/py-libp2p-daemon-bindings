@@ -90,5 +90,5 @@ class PeerInfo:
     @classmethod
     def from_pb(cls, peer_info_pb):
         peer_id = PeerID(peer_info_pb.id)
-        addrs = [Multiaddr(addr) for addr in peer_info_pb.addrs]
+        addrs = [Multiaddr(binascii.hexlify(addr)) for addr in peer_info_pb.addrs]
         return cls(peer_id, addrs)

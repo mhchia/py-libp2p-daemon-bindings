@@ -174,6 +174,8 @@ class Client:
         # if success, add the handler to the dict
         self.handlers[proto] = handler_cb
 
+    # DHT operations
+
     async def _do_dht(self, dht_req):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         req = p2pd_pb.Request(
@@ -360,6 +362,61 @@ class Client:
         req = p2pd_pb.Request(
             type=p2pd_pb.Request.DHT,
             dht=dht_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+    # connection manager
+
+    async def tag_peer(self, peer_id, tag, weight):
+        """TAG_PEER
+        """
+        connmgr_req = p2pd_pb.ConnManagerRequest(
+            type=p2pd_pb.ConnManagerRequest.TAG_PEER,
+            peer=peer_id.to_bytes(),
+            tag=tag,
+            weight=weight,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.CONNMANAGER,
+            connManager=connmgr_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+    async def untag_peer(self, peer_id, tag):
+        """UNTAG_PEER
+        """
+        connmgr_req = p2pd_pb.ConnManagerRequest(
+            type=p2pd_pb.ConnManagerRequest.UNTAG_PEER,
+            peer=peer_id.to_bytes(),
+            tag=tag,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.CONNMANAGER,
+            connManager=connmgr_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+    async def trim(self):
+        """TRIM
+        """
+        connmgr_req = p2pd_pb.ConnManagerRequest(
+            type=p2pd_pb.ConnManagerRequest.TRIM,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.CONNMANAGER,
+            connManager=connmgr_req,
         )
         reader, writer = await asyncio.open_unix_connection(self.control_path)
         await self._write_pb(writer, req)

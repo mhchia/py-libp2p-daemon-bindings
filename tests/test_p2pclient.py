@@ -58,17 +58,21 @@ def spinup_p2pds(request):
 
 
 def start_p2pd(control_path):
+    cmd_list = [
+        "p2pd",
+        f"-sock={control_path}",
+        "-dht=true",
+        "-connLo=1",  # FIXME: used to test conn manager
+        "-connHi=1",  # FIXME: used to test conn manager
+        "-connGrace=0",  # FIXME: used to test conn manager
+    ]
     try:
         os.unlink(control_path)
     except FileNotFoundError:
         pass
     f_log = open('/tmp/p2pd_{}.log'.format(control_path[5:]), 'wb')
     return subprocess.Popen(
-        [
-            "p2pd",
-            f"-sock={control_path}",
-            "-dht",
-        ],
+        cmd_list,
         stdout=f_log,
         stderr=f_log,
     )
@@ -444,3 +448,48 @@ async def test_client_provide():
     pinfos = await c1.find_providers(content_id_bytes, 100)
     assert len(pinfos) == 1
     assert pinfos[0].peer_id == peer_id_0
+
+
+@pytest.mark.asyncio
+async def test_client_tag_peer(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    peer_id_0, _ = await c0.identify()
+    # test case: tag myself
+    await c0.tag_peer(peer_id_0, "123", 123)
+    # test case: tag others
+    await c1.tag_peer(peer_id_0, "123", 123)
+    # test case: tag the same peers multiple times
+    await c1.tag_peer(peer_id_0, "456", 456)
+    # test case: tag multiple peers
+    await c1.tag_peer(peer_id_random, "123", 1)
+    # test case: tag the same peer with the same tag but different weight
+    await c1.tag_peer(peer_id_random, "123", 123)
+
+
+@pytest.mark.asyncio
+async def test_client_untag_peer(peer_id_random):
+    c0 = await make_p2pclient(0)
+    # test case: untag an inexisting tag
+    await c0.untag_peer(peer_id_random, "123")
+    # test case: untag a tag
+    await c0.tag_peer(peer_id_random, "123", 123)
+    await c0.untag_peer(peer_id_random, "123")
+    # test case: untag a tag twice
+    await c0.untag_peer(peer_id_random, "123")
+
+
+@pytest.mark.asyncio
+async def test_client_trim(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_2, maddrs_2 = await c2.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    await c1.connect(peer_id_2, maddrs_2)
+    assert len(await c1.list_peers()) == 2
+    await c1.tag_peer(peer_id_0, "123", 1)
+    await c1.tag_peer(peer_id_2, "123", 2)
+    await c1.trim()
+    # TODO: add a check here to ensure the trim works

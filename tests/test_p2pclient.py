@@ -118,6 +118,25 @@ async def test_client_connect_failure(peer_id_random):
 
 
 @pytest.mark.asyncio
+async def test_client_list_peers():
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    c2 = await make_p2pclient(2)
+    # test case: no peers
+    assert len(await c0.list_peers()) == 0
+    # test case: 1 peer
+    peer_id_0, maddrs_0 = await c0.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    assert len(await c0.list_peers()) == 1
+    assert len(await c1.list_peers()) == 1
+    # test case: one more peer
+    await c2.connect(peer_id_0, maddrs_0)
+    assert len(await c0.list_peers()) == 2
+    assert len(await c1.list_peers()) == 1
+    assert len(await c2.list_peers()) == 1
+
+
+@pytest.mark.asyncio
 async def test_client_stream_open_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)

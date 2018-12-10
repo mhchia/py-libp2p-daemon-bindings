@@ -109,6 +109,19 @@ class Client:
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
+    async def list_peers(self):
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.LIST_PEERS,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+        pinfos = [PeerInfo.from_pb(pinfo) for pinfo in resp.peers]
+        return pinfos
+
     async def stream_open(self, peer_id, protocols):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 

@@ -423,3 +423,23 @@ class Client:
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
+
+    # PubSub
+
+    async def get_topics(self):
+        """
+        """
+        pubsub_req = p2pd_pb.PSRequest(
+            type=p2pd_pb.PSRequest.GET_TOPICS,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.PUBSUB,
+            pubsub=pubsub_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+        return resp.pubsub.topics

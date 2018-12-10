@@ -62,6 +62,8 @@ def start_p2pd(control_path):
         "p2pd",
         f"-sock={control_path}",
         "-dht=true",
+        "-pubsub=true",
+        "-pubsubRouter=gossipsub",
         "-connLo=1",  # FIXME: used to test conn manager
         "-connHi=1",  # FIXME: used to test conn manager
         "-connGrace=0",  # FIXME: used to test conn manager
@@ -480,7 +482,7 @@ async def test_client_untag_peer(peer_id_random):
 
 
 @pytest.mark.asyncio
-async def test_client_trim(peer_id_random):
+async def test_client_trim():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
@@ -493,3 +495,10 @@ async def test_client_trim(peer_id_random):
     await c1.tag_peer(peer_id_2, "123", 2)
     await c1.trim()
     # TODO: add a check here to ensure the trim works
+
+
+@pytest.mark.asyncio
+async def test_client_get_topics():
+    c0 = await make_p2pclient(0)
+    topics = await c0.get_topics()
+    assert len(topics) == 0

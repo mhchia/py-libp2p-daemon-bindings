@@ -21,6 +21,11 @@ from p2pclient.p2pclient import (
     Client,
     ControlFailure,
 )
+from p2pclient.serialization import (
+    read_pbmsg_safe,
+)
+
+import p2pclient.pb.p2pd_pb2 as p2pd_pb
 
 
 NUM_P2PD = 3
@@ -502,3 +507,59 @@ async def test_client_get_topics():
     c0 = await make_p2pclient(0)
     topics = await c0.get_topics()
     assert len(topics) == 0
+
+
+@pytest.mark.asyncio
+async def test_client_list_topic_peers():
+    c0 = await make_p2pclient(0)
+    peers = await c0.list_topic_peers("123")
+    assert len(peers) == 0
+
+
+@pytest.mark.asyncio
+async def test_client_publish():
+    c0 = await make_p2pclient(0)
+    await c0.publish("123", b"data")
+
+
+@pytest.mark.asyncio
+async def test_client_subscribe():
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_1, _ = await c1.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    topic = "topic123"
+    data = b"data"
+    reader_0, _ = await c0.subscribe(topic)
+    reader_1, writer_1 = await c1.subscribe(topic)
+    # test case: `get_topics` after subscriptions
+    assert topic in await c0.get_topics()
+    assert topic in await c1.get_topics()
+    # wait for mesh built
+    await asyncio.sleep(2)
+    # test case: `list_topic_peers` after subscriptions
+    assert peer_id_0 in await c1.list_topic_peers(topic)
+    assert peer_id_1 in await c0.list_topic_peers(topic)
+    # test case: publish, and both clients receive data
+    await c0.publish(topic, data)
+    pubsub_msg_0 = p2pd_pb.PSMessage()
+    await read_pbmsg_safe(reader_0, pubsub_msg_0)
+    assert pubsub_msg_0.data == data
+    pubsub_msg_1 = p2pd_pb.PSMessage()
+    await read_pbmsg_safe(reader_1, pubsub_msg_1)
+    assert pubsub_msg_1.data == data
+    # test case: publish more data
+    another_data_0 = b"another_data_0"
+    another_data_1 = b"another_data_1"
+    await c0.publish(topic, another_data_0)
+    await c0.publish(topic, another_data_1)
+    pubsub_msg_1_0 = p2pd_pb.PSMessage()
+    await read_pbmsg_safe(reader_1, pubsub_msg_1_0)
+    assert pubsub_msg_1_0.data == another_data_0
+    pubsub_msg_1_1 = p2pd_pb.PSMessage()
+    await read_pbmsg_safe(reader_1, pubsub_msg_1_1)
+    assert pubsub_msg_1_1.data == another_data_1
+    # test case: unsubscribe by closing the stream
+    writer_1.close()
+    await reader_1.read() == b""

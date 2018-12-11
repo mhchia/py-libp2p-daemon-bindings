@@ -427,7 +427,7 @@ class Client:
     # PubSub
 
     async def get_topics(self):
-        """
+        """PUBSUB GET_TOPICS
         """
         pubsub_req = p2pd_pb.PSRequest(
             type=p2pd_pb.PSRequest.GET_TOPICS,
@@ -443,3 +443,61 @@ class Client:
         raise_if_failed(resp)
 
         return resp.pubsub.topics
+
+    # FIXME: name conflicts: `list_topic_peers` is originally `list_peers` in pubsub
+    async def list_topic_peers(self, topic):
+        """PUBSUB LIST_PEERS
+        """
+        pubsub_req = p2pd_pb.PSRequest(
+            type=p2pd_pb.PSRequest.LIST_PEERS,
+            topic=topic,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.PUBSUB,
+            pubsub=pubsub_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+        peers = [PeerID(peer_id_bytes) for peer_id_bytes in resp.pubsub.peerIDs]
+        return peers
+
+    async def publish(self, topic, data):
+        """PUBSUB PUBLISH
+        """
+        pubsub_req = p2pd_pb.PSRequest(
+            type=p2pd_pb.PSRequest.PUBLISH,
+            topic=topic,
+            data=data,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.PUBSUB,
+            pubsub=pubsub_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+    async def subscribe(self, topic):
+        """PUBSUB SUBSCRIBE
+        """
+        pubsub_req = p2pd_pb.PSRequest(
+            type=p2pd_pb.PSRequest.SUBSCRIBE,
+            topic=topic,
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.PUBSUB,
+            pubsub=pubsub_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
+        return reader, writer

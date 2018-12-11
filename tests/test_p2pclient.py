@@ -546,9 +546,13 @@ async def test_client_subscribe():
     peer_id_0, maddrs_0 = await c0.identify()
     peer_id_1, _ = await c1.identify()
     await c1.connect(peer_id_0, maddrs_0)
+    peers_0 = [pinfo.peer_id for pinfo in await c0.list_peers()]
+    peers_1 = [pinfo.peer_id for pinfo in await c1.list_peers()]
+    assert peer_id_0 in peers_1
+    assert peer_id_1 in peers_0
     topic = "topic123"
     data = b"data"
-    reader_0, _ = await c0.subscribe(topic)
+    reader_0, writer_0 = await c0.subscribe(topic)
     reader_1, writer_1 = await c1.subscribe(topic)
     # test case: `get_topics` after subscriptions
     assert topic in await c0.get_topics()
@@ -578,5 +582,7 @@ async def test_client_subscribe():
     await read_pbmsg_safe(reader_1, pubsub_msg_1_1)
     assert pubsub_msg_1_1.data == another_data_1
     # test case: unsubscribe by closing the stream
+    writer_0.close()
+    await reader_0.read() == b""
     writer_1.close()
     await reader_1.read() == b""

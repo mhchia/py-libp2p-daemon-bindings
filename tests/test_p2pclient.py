@@ -158,6 +158,9 @@ async def test_client_disconnect(peer_id_random):
     await c1.connect(peer_id_0, maddrs_0)
     assert len(await c0.list_peers()) == 1
     assert len(await c1.list_peers()) == 1
+    await c1.disconnect(peer_id_0)
+    assert len(await c0.list_peers()) == 0
+    assert len(await c1.list_peers()) == 0
     # test case: disconnect twice
     await c1.disconnect(peer_id_0)
     assert len(await c0.list_peers()) == 0

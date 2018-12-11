@@ -4,7 +4,7 @@
 
 > The [libp2p daemon](https://github.com/libp2p/go-libp2p-daemon) bindings for Python
 
-🚧 Work In Progress! 🚧
+Have aligned with the go-client now!
 
 Methods
 - [x] `Identify`
@@ -13,5 +13,5 @@ Methods
 - [x] `StreamHandler` - Register
 - [x] `StreamHandler` - Inbound stream
 - [x] DHT ops
-- [ ] Conn manager ops
-- [ ] PubSub ops
+- [x] Conn manager ops
+- [x] PubSub ops

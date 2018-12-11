@@ -148,6 +148,23 @@ async def test_client_list_peers():
 
 
 @pytest.mark.asyncio
+async def test_client_disconnect(peer_id_random):
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    # test case: disconnect a peer without connections
+    await c1.disconnect(peer_id_random)
+    # test case: disconnect
+    peer_id_0, maddrs_0 = await c0.identify()
+    await c1.connect(peer_id_0, maddrs_0)
+    assert len(await c0.list_peers()) == 1
+    assert len(await c1.list_peers()) == 1
+    # test case: disconnect twice
+    await c1.disconnect(peer_id_0)
+    assert len(await c0.list_peers()) == 0
+    assert len(await c1.list_peers()) == 0
+
+
+@pytest.mark.asyncio
 async def test_client_stream_open_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)

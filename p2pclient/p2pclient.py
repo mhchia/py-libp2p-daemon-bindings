@@ -122,6 +122,20 @@ class Client:
         pinfos = [PeerInfo.from_pb(pinfo) for pinfo in resp.peers]
         return pinfos
 
+    async def disconnect(self, peer_id):
+        disconnect_req = p2pd_pb.DisconnectRequest(
+            peer=peer_id.to_bytes(),
+        )
+        req = p2pd_pb.Request(
+            type=p2pd_pb.Request.DISCONNECT,
+            disconnect=disconnect_req,
+        )
+        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        await self._write_pb(writer, req)
+        resp = p2pd_pb.Response()
+        await read_pbmsg_safe(reader, resp)
+        raise_if_failed(resp)
+
     async def stream_open(self, peer_id, protocols):
         reader, writer = await asyncio.open_unix_connection(self.control_path)
 

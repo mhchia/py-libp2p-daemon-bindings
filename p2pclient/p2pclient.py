@@ -7,18 +7,18 @@ from multiaddr import (
     Multiaddr,
 )
 
-from p2pclient.datastructures import (
+from .datastructures import (
     PeerID,
     PeerInfo,
     StreamInfo,
 )
-from p2pclient.serialization import (
+from .serialization import (
     read_pbmsg_safe,
     serialize,
 )
 
-import p2pclient.pb.p2pd_pb2 as p2pd_pb
-import p2pclient.pb.crypto_pb2 as crypto_pb
+from .pb import p2pd_pb2 as p2pd_pb
+from .pb import crypto_pb2 as crypto_pb
 
 
 class ControlFailure(Exception):

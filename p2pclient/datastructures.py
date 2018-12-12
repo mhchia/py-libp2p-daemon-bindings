@@ -6,7 +6,7 @@ from multiaddr import (
     Multiaddr,
 )
 
-import p2pclient.pb.p2pd_pb2 as pb
+from .pb import p2pd_pb2 as pb
 
 
 class PeerID:

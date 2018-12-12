@@ -556,7 +556,7 @@ async def test_client_subscribe():
     topic = "topic123"
     data = b"data"
     reader_0, writer_0 = await c0.subscribe(topic)
-    reader_1, writer_1 = await c1.subscribe(topic)
+    reader_1, _ = await c1.subscribe(topic)
     # test case: `get_topics` after subscriptions
     assert topic in await c0.get_topics()
     assert topic in await c1.get_topics()
@@ -587,5 +587,5 @@ async def test_client_subscribe():
     # test case: unsubscribe by closing the stream
     writer_0.close()
     await reader_0.read() == b""
-    writer_1.close()
-    await reader_1.read() == b""
+    assert topic not in await c0.get_topics()
+    assert peer_id_0 not in await c1.list_topic_peers(topic)

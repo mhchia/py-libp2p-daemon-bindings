@@ -85,10 +85,10 @@ def start_p2pd(control_path):
     )
 
 
-async def make_p2pclient(number):
-    if number >= NUM_P2PD:
-        raise ValueError(f"number={number} >= NUM_P2PD={NUM_P2PD}")
-    p2pd_info = p2pd_procs[number]
+async def make_p2pclient(serial_no):
+    if serial_no >= NUM_P2PD:
+        raise ValueError(f"serial_no={serial_no} >= NUM_P2PD={NUM_P2PD}")
+    p2pd_info = p2pd_procs[serial_no]
     c = Client(p2pd_info.control_path, p2pd_info.listen_path)
     await c.listen()
     return c
@@ -147,6 +147,23 @@ async def test_client_list_peers():
     assert len(await c2.list_peers()) == 1
 
 
+async def connect_safe(client_0, client_1):
+    peer_id_0, _ = await client_0.identify()
+    peer_id_1, maddrs_1 = await client_1.identify()
+    await client_0.connect(peer_id_1, maddrs_1)
+    peers_0 = [pinfo.peer_id for pinfo in await client_0.list_peers()]
+    peers_1 = [pinfo.peer_id for pinfo in await client_1.list_peers()]
+    assert peer_id_0 in peers_1
+    assert peer_id_1 in peers_0
+
+
+@pytest.mark.asyncio
+async def test_connect_safe():
+    c0 = await make_p2pclient(0)
+    c1 = await make_p2pclient(1)
+    await connect_safe(c0, c1)
+
+
 @pytest.mark.asyncio
 async def test_client_disconnect(peer_id_random):
     c0 = await make_p2pclient(0)
@@ -154,8 +171,8 @@ async def test_client_disconnect(peer_id_random):
     # test case: disconnect a peer without connections
     await c1.disconnect(peer_id_random)
     # test case: disconnect
-    peer_id_0, maddrs_0 = await c0.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    peer_id_0, _ = await c0.identify()
+    await connect_safe(c0, c1)
     assert len(await c0.list_peers()) == 1
     assert len(await c1.list_peers()) == 1
     await c1.disconnect(peer_id_0)
@@ -173,7 +190,7 @@ async def test_client_stream_open_success():
     c1 = await make_p2pclient(1)
 
     peer_id_1, maddrs_1 = await c1.identify()
-    await c0.connect(peer_id_1, maddrs_1)
+    await connect_safe(c0, c1)
 
     proto = "123"
 
@@ -210,8 +227,8 @@ async def test_client_stream_open_failure():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
 
-    peer_id_1, maddrs_1 = await c1.identify()
-    await c0.connect(peer_id_1, maddrs_1)
+    peer_id_1, _ = await c1.identify()
+    await connect_safe(c0, c1)
 
     proto = "123"
 
@@ -237,7 +254,7 @@ async def test_client_stream_handler_success():
     c1 = await make_p2pclient(1)
 
     peer_id_1, maddrs_1 = await c1.identify()
-    await c0.connect(peer_id_1, maddrs_1)
+    await connect_safe(c0, c1)
 
     proto = "123"
     bytes_to_send = b"yoyoyoyoyog"
@@ -266,7 +283,7 @@ async def test_client_stream_handler_failure():
     c1 = await make_p2pclient(1)
 
     peer_id_1, maddrs_1 = await c1.identify()
-    await c0.connect(peer_id_1, maddrs_1)
+    await connect_safe(c0, c1)
 
     proto = "123"
 
@@ -291,11 +308,9 @@ async def test_client_find_peer_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
-    peer_id_1, maddrs_1 = await c1.identify()
     peer_id_2, _ = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    await c2.connect(peer_id_1, maddrs_1)
+    await connect_safe(c0, c1)
+    await connect_safe(c1, c2)
     pinfo = await c0.find_peer(peer_id_2)
     assert pinfo.peer_id == peer_id_2
     assert len(pinfo.addrs) != 0
@@ -306,9 +321,8 @@ async def test_client_find_peer_failure(peer_id_random):
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
     peer_id_2, _ = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: `peer_id` not found
     with pytest.raises(ControlFailure):
         await c0.find_peer(peer_id_random)
@@ -322,12 +336,10 @@ async def test_client_find_peers_connected_to_peer_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
-    peer_id_1, maddrs_1 = await c1.identify()
     peer_id_2, _ = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: 0 <-> 1 <-> 2
-    await c2.connect(peer_id_1, maddrs_1)
+    await connect_safe(c1, c2)
     pinfos_connecting_to_2 = await c0.find_peers_connected_to_peer(peer_id_2)
     # TODO: need to confirm this behaviour. Why the result is the PeerInfo of `peer_id_2`?
     assert len(pinfos_connecting_to_2) == 1
@@ -338,9 +350,8 @@ async def test_client_find_peers_connected_to_peer_failure(peer_id_random):
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
     peer_id_2, _ = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: request for random peer_id
     pinfos = await c0.find_peers_connected_to_peer(peer_id_random)
     assert not pinfos
@@ -353,8 +364,7 @@ async def test_client_find_peers_connected_to_peer_failure(peer_id_random):
 async def test_client_find_providers():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
-    peer_id_0, maddrs_0 = await c0.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # borrowed from https://github.com/ipfs/go-cid#parsing-string-input-from-users
     content_id_bytes = b'\x01r\x12 \xc0F\xc8\xechB\x17\xf0\x1b$\xb9\xecw\x11\xde\x11Cl\x8eF\xd8\x9a\xf1\xaeLa?\xb0\xaf\xe6K\x8b'  # noqa: E501
     pinfos = await c1.find_providers(content_id_bytes, 100)
@@ -366,10 +376,8 @@ async def test_client_get_closest_peers():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
-    peer_id_2, maddrs_2 = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    await c1.connect(peer_id_2, maddrs_2)
+    await connect_safe(c0, c1)
+    await connect_safe(c1, c2)
     peer_ids_1 = await c1.get_closest_peers(b"123")
     assert len(peer_ids_1) == 2
 
@@ -379,11 +387,10 @@ async def test_client_get_public_key_success(peer_id_random):
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_0, _ = await c0.identify()
     peer_id_1, _ = await c1.identify()
-    peer_id_2, maddrs_2 = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    await c1.connect(peer_id_2, maddrs_2)
+    await connect_safe(c0, c1)
+    await connect_safe(c1, c2)
     await asyncio.sleep(0.2)
     pk0 = await c0.get_public_key(peer_id_0)
     pk1 = await c0.get_public_key(peer_id_1)
@@ -395,10 +402,9 @@ async def test_client_get_public_key_failure(peer_id_random):
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
-    peer_id_2, maddrs_2 = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    await c1.connect(peer_id_2, maddrs_2)
+    peer_id_2, _ = await c2.identify()
+    await connect_safe(c0, c1)
+    await connect_safe(c1, c2)
     # test case: failed to get the pubkey of the peer_id_random
     with pytest.raises(ControlFailure):
         await c0.get_public_key(peer_id_random)
@@ -415,8 +421,7 @@ async def test_client_get_value():
     # test case: no peer in table
     with pytest.raises(ControlFailure):
         await c0.get_value(key_not_existing)
-    peer_id_0, maddrs_0 = await c0.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: routing not found
     with pytest.raises(ControlFailure):
         await c0.get_value(key_not_existing)
@@ -430,8 +435,7 @@ async def test_client_search_value():
     # test case: no peer in table
     with pytest.raises(ControlFailure):
         await c0.search_value(key_not_existing)
-    peer_id_0, maddrs_0 = await c0.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: non-existing key
     pinfos = await c0.search_value(key_not_existing)
     assert len(pinfos) == 0
@@ -441,8 +445,8 @@ async def test_client_search_value():
 async def test_client_put_value():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
-    peer_id_0, maddrs_0 = await c0.identify()
-    await c1.connect(peer_id_0, maddrs_0)
+    peer_id_0, _ = await c0.identify()
+    await connect_safe(c0, c1)
 
     # test case: valid key
     pk0 = await c0.get_public_key(peer_id_0)
@@ -463,9 +467,9 @@ async def test_client_put_value():
 @pytest.mark.asyncio
 async def test_client_provide():
     c0 = await make_p2pclient(0)
-    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_0, _ = await c0.identify()
     c1 = await make_p2pclient(1)
-    await c1.connect(peer_id_0, maddrs_0)
+    await connect_safe(c0, c1)
     # test case: no providers
     content_id_bytes = b'\x01r\x12 \xc0F\xc8\xechB\x17\xf0\x1b$\xb9\xecw\x11\xde\x11Cl\x8eF\xd8\x9a\xf1\xaeLa?\xb0\xaf\xe6K\x8b'  # noqa: E501
     pinfos_empty = await c1.find_providers(content_id_bytes, 100)
@@ -511,10 +515,10 @@ async def test_client_trim():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
     c2 = await make_p2pclient(2)
-    peer_id_0, maddrs_0 = await c0.identify()
-    peer_id_2, maddrs_2 = await c2.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    await c1.connect(peer_id_2, maddrs_2)
+    peer_id_0, _ = await c0.identify()
+    peer_id_2, _ = await c2.identify()
+    await connect_safe(c0, c1)
+    await connect_safe(c1, c2)
     assert len(await c1.list_peers()) == 2
     await c1.tag_peer(peer_id_0, "123", 1)
     await c1.tag_peer(peer_id_2, "123", 2)
@@ -546,13 +550,9 @@ async def test_client_publish():
 async def test_client_subscribe():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
-    peer_id_0, maddrs_0 = await c0.identify()
+    peer_id_0, _ = await c0.identify()
     peer_id_1, _ = await c1.identify()
-    await c1.connect(peer_id_0, maddrs_0)
-    peers_0 = [pinfo.peer_id for pinfo in await c0.list_peers()]
-    peers_1 = [pinfo.peer_id for pinfo in await c1.list_peers()]
-    assert peer_id_0 in peers_1
-    assert peer_id_1 in peers_0
+    await connect_safe(c0, c1)
     topic = "topic123"
     data = b"data"
     reader_0, writer_0 = await c0.subscribe(topic)

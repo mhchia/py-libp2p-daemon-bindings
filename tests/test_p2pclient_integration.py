@@ -248,33 +248,87 @@ async def test_client_stream_open_failure():
         )
 
 
+def _get_current_running_dispatched_handler():
+    running_handlers = tuple(
+        task
+        for task in asyncio.Task.all_tasks()
+        if (task._coro.__name__ == "_dispatcher") and (not task.done())
+    )
+    # assume there should only be exactly one dispatched handler
+    assert len(running_handlers) == 1
+    return running_handlers[0]
+
+
 @pytest.mark.asyncio
 async def test_client_stream_handler_success():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
 
-    peer_id_1, maddrs_1 = await c1.identify()
+    peer_id_1, _ = await c1.identify()
     await connect_safe(c0, c1)
 
-    proto = "123"
+    proto = "protocol123"
     bytes_to_send = b"yoyoyoyoyog"
+    # event for this test function to wait until the handler function receiving the incoming data
+    event_proto = asyncio.Event()
 
     async def handle_proto(stream_info, reader, writer):
+        event_proto.set()
         bytes_received = await reader.read(len(bytes_to_send))
         assert bytes_received == bytes_to_send
-        assert reader.at_eof()
 
     await c1.stream_handler(proto, handle_proto)
 
+    # test case: test the stream handler `handle_proto`
     _, _, writer = await c0.stream_open(
         peer_id_1,
         [proto],
     )
-    # test case: test the stream handler `handle_proto`
+    # wait until the handler function starts blocking waiting for the data
+    await event_proto.wait()
+    # because we haven't sent the data, we know the handler function must still blocking waiting.
+    # get the task of the protocol handler
+    task_proto_handler = _get_current_running_dispatched_handler()
     writer.write(bytes_to_send)
     await writer.drain()
+
+    # wait for the handler to finish
+    await task_proto_handler
+    assert task_proto_handler.done()
+    # check if `AssertionError` is thrown
+    assert task_proto_handler.exception() is None
+
     writer.close()
-    await asyncio.sleep(0.1)  # yield
+
+    # test case: two streams to different handlers respectively
+    another_proto = "another_protocol123"
+    another_bytes_to_send = b"456"
+    event_another_proto = asyncio.Event()
+
+    async def handle_another_proto(stream_info, reader, writer):
+        event_another_proto.set()
+        bytes_received = await reader.read(len(another_bytes_to_send))
+        assert bytes_received == another_bytes_to_send
+
+    await c1.stream_handler(another_proto, handle_another_proto)
+
+    _, _, another_writer = await c0.stream_open(
+        peer_id_1,
+        [another_proto],
+    )
+    await event_another_proto.wait()
+
+    # we know at this moment the handler must still blocking wait
+    task_another_protocol_handler = _get_current_running_dispatched_handler()
+
+    another_writer.write(another_bytes_to_send)
+    await another_writer.drain()
+
+    await task_another_protocol_handler
+    assert task_another_protocol_handler.done()
+    assert task_another_protocol_handler.exception() is None
+
+    another_writer.close()
 
 
 @pytest.mark.asyncio
@@ -282,7 +336,7 @@ async def test_client_stream_handler_failure():
     c0 = await make_p2pclient(0)
     c1 = await make_p2pclient(1)
 
-    peer_id_1, maddrs_1 = await c1.identify()
+    peer_id_1, _ = await c1.identify()
     await connect_safe(c0, c1)
 
     proto = "123"

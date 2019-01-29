@@ -7,6 +7,8 @@ from multiaddr import (
     Multiaddr,
 )
 
+from . import config
+
 from .datastructures import (
     PeerID,
     PeerInfo,
@@ -41,14 +43,16 @@ def raise_if_failed(response):
 class Client:
     control_path = None
     listen_path = None
-    listener = None
 
     mutex_handlers = None
     handlers = None
 
     logger = logging.getLogger('p2pclient.Client')
 
-    def __init__(self, control_path, listen_path):
+    def __init__(
+            self,
+            control_path=config.control_path,
+            listen_path=config.listen_path):
         self.control_path = control_path
         self.listen_path = listen_path
         self.handlers = {}
@@ -70,7 +74,9 @@ class Client:
         await writer.drain()
 
     async def listen(self):
-        self.listener = await asyncio.start_unix_server(self._dispatcher, self.listen_path)
+        # TODO: `start_unix_server` finishes right after awaited, without more coroutine spawn
+        #       Then what is serving for the incoming requests?
+        await asyncio.start_unix_server(self._dispatcher, self.listen_path),
 
     async def identify(self):
         reader, writer = await asyncio.open_unix_connection(self.control_path)

@@ -6,7 +6,7 @@ python:
   - "3.6"
 
 env:
-  - GOPACKAGE=go1.10.3.linux-amd64.tar.gz LIBP2P_DAEMON_REPO=github.com/libp2p/go-libp2p-daemon
+  - GOPACKAGE=go1.11.5.linux-amd64.tar.gz LIBP2P_DAEMON_REPO=github.com/libp2p/go-libp2p-daemon
 
 before_install:
   # install go

@@ -19,7 +19,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "base58",
-        "py-multiaddr",  # use the forked one temporarily
+        # use my forked multiaddr temporarily until the fixing PR is merged
+        "multiaddr @ git+ssh://git@github.com/mhchia/py-multiaddr@feature/add-unix-proto",
         "protobuf",
     ],
     classifiers=[

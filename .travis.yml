@@ -22,7 +22,7 @@ install:
   - go get $LIBP2P_DAEMON_REPO
   - cd $GOPATH/src/$LIBP2P_DAEMON_REPO
   - make bin
-  # install tox
+  - pip install --upgrade pip
   - pip install tox
 
 before_script:

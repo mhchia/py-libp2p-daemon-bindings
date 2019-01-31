@@ -10,6 +10,7 @@ import pytest
 
 from multiaddr import (
     Multiaddr,
+    protocols,
 )
 
 import multihash
@@ -26,15 +27,12 @@ from p2pclient.p2pclient import (
 from p2pclient.serialization import (
     read_pbmsg_safe,
 )
-from p2pclient.utils import (
-    trim_path_unix_prefix,
-)
 
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 
 
 NUM_P2PD = 3
-P2PDInfo = namedtuple('P2PDInfo', ['proc', 'control_path', 'listen_path'])
+P2PDInfo = namedtuple('P2PDInfo', ['proc', 'control_maddr', 'listen_maddr'])
 
 p2pd_procs = {}
 
@@ -47,11 +45,11 @@ def peer_id_random():
 @pytest.fixture(scope="function", autouse=True)
 def spinup_p2pds(request):
     for i in range(NUM_P2PD):
-        control_maddr = f"/unix/tmp/test_p2pd_control_{i}.sock"
-        listen_maddr = f"/unix/tmp/test_p2pd_listen_{i}.sock"
+        control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{i}.sock")
+        listen_maddr = Multiaddr(f"/unix/tmp/test_p2pd_listen_{i}.sock")
         try:
             os.unlink(
-                trim_path_unix_prefix(listen_maddr)
+                listen_maddr.value_for_protocol(protocols.P_UNIX)
             )
         except FileNotFoundError:
             pass
@@ -72,7 +70,7 @@ def spinup_p2pds(request):
 def start_p2pd(control_maddr):
     cmd_list = [
         "p2pd",
-        f"-listen={control_maddr}",
+        f"-listen={str(control_maddr)}",
         "-dht=true",
         "-pubsub=true",
         "-pubsubRouter=gossipsub",
@@ -80,7 +78,7 @@ def start_p2pd(control_maddr):
         "-connHi=1",  # FIXME: used to test conn manager
         "-connGrace=0",  # FIXME: used to test conn manager
     ]
-    unix_sock_path = trim_path_unix_prefix(control_maddr)
+    unix_sock_path = control_maddr.value_for_protocol(protocols.P_UNIX)
     try:
         os.unlink(unix_sock_path)
     except FileNotFoundError:
@@ -100,7 +98,7 @@ async def make_p2pclient(serial_no):
     if serial_no >= NUM_P2PD:
         raise ValueError(f"serial_no={serial_no} >= NUM_P2PD={NUM_P2PD}")
     p2pd_info = p2pd_procs[serial_no]
-    c = Client(p2pd_info.control_path, p2pd_info.listen_path)
+    c = Client(p2pd_info.control_maddr, p2pd_info.listen_maddr)
     await c.listen()
     return c
 
@@ -289,6 +287,8 @@ async def test_client_stream_handler_success():
         assert bytes_received == bytes_to_send
 
     await c1.stream_handler(proto, handle_proto)
+    assert proto in c1.handlers
+    assert handle_proto == c1.handlers[proto]
 
     # test case: test the stream handler `handle_proto`
     _, _, writer = await c0.stream_open(
@@ -322,6 +322,8 @@ async def test_client_stream_handler_success():
         assert bytes_received == another_bytes_to_send
 
     await c1.stream_handler(another_proto, handle_another_proto)
+    assert another_proto in c1.handlers
+    assert handle_another_proto == c1.handlers[another_proto]
 
     _, _, another_writer = await c0.stream_open(
         peer_id_1,
@@ -340,6 +342,24 @@ async def test_client_stream_handler_success():
     assert task_another_protocol_handler.exception() is None
 
     another_writer.close()
+
+    # test case: registering twice can override the previous registration
+    event_third = asyncio.Event()
+
+    async def handler_third(stream_info, reader, writer):
+        event_third.set()
+
+    await c1.stream_handler(another_proto, handler_third)
+    assert another_proto in c1.handlers
+    # ensure the handler is override
+    assert handler_third == c1.handlers[another_proto]
+
+    await c0.stream_open(
+        peer_id_1,
+        [another_proto],
+    )
+    # ensure the overriding handler is called when the protocol is opened a stream
+    await event_third.wait()
 
 
 @pytest.mark.asyncio

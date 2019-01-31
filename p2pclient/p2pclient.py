@@ -42,7 +42,10 @@ class Client:
 
     logger = logging.getLogger('p2pclient.Client')
 
-    def __init__(self, _control_maddr, _listen_maddr):
+    def __init__(
+            self,
+            _control_maddr=config.control_maddr,
+            _listen_maddr=config.control_maddr):
         self.control_maddr = Multiaddr(_control_maddr)
         self.listen_maddr = Multiaddr(_listen_maddr)
         self.handlers = {}

@@ -37,7 +37,6 @@ class Client:
     listen_maddr = None
     listener = None
 
-    mutex_handlers = None
     handlers = None
 
     logger = logging.getLogger('p2pclient.Client')

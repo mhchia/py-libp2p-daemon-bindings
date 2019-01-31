@@ -14,35 +14,28 @@ from .datastructures import (
     PeerInfo,
     StreamInfo,
 )
+from .exceptions import (
+    ControlFailure,
+    DispatchFailure,
+)
 from .serialization import (
     read_pbmsg_safe,
     serialize,
+)
+from .utils import (
+    raise_if_failed,
+    trim_path_unix_prefix,
 )
 
 from .pb import p2pd_pb2 as p2pd_pb
 from .pb import crypto_pb2 as crypto_pb
 
 
-class ControlFailure(Exception):
-    pass
-
-
-class DispatchFailure(Exception):
-    pass
-
-
-def raise_if_failed(response):
-    if response.type == p2pd_pb.Response.ERROR:
-        raise ControlFailure(
-            "connect failed. msg={}".format(
-                response.error.msg,
-            )
-        )
-
-
+# TODO: add support for socket stream
 class Client:
-    control_path = None
-    listen_path = None
+    control_maddr = None
+    listen_maddr = None
+    listener = None
 
     mutex_handlers = None
     handlers = None
@@ -51,11 +44,19 @@ class Client:
 
     def __init__(
             self,
-            control_path=config.control_path,
-            listen_path=config.listen_path):
-        self.control_path = control_path
-        self.listen_path = listen_path
+            _control_maddr=config.control_maddr,
+            _listen_maddr=config.control_maddr):
+        self.control_maddr = Multiaddr(_control_maddr)
+        self.listen_maddr = Multiaddr(_listen_maddr)
         self.handlers = {}
+
+    @property
+    def control_path(self):
+        return trim_path_unix_prefix(str(self.control_maddr))
+
+    @property
+    def listen_path(self):
+        return trim_path_unix_prefix(str(self.listen_maddr))
 
     async def _dispatcher(self, reader, writer):
         pb_stream_info = p2pd_pb.StreamInfo()
@@ -176,9 +177,9 @@ class Client:
                     handler_sig,
                 )
             )
-
+        listen_path_maddr_bytes = binascii.unhexlify(self.listen_maddr.to_bytes())
         stream_handler_req = p2pd_pb.StreamHandlerRequest(
-            path=self.listen_path,
+            addr=listen_path_maddr_bytes,
             proto=[proto],
         )
         req = p2pd_pb.Request(
@@ -308,7 +309,7 @@ class Client:
         if len(resps) != 1:
             raise ControlFailure(f"should only get one response, resps={resps}")
         try:
-                # TODO: parse the public key with another class?
+            # TODO: parse the public key with another class?
             public_key_pb_bytes = resps[0].value
         except AttributeError as e:
             raise ControlFailure(
@@ -329,7 +330,7 @@ class Client:
         if len(resps) != 1:
             raise ControlFailure(f"should only get one response, resps={resps}")
         try:
-                # TODO: parse the public key with another class?
+            # TODO: parse the public key with another class?
             value = resps[0].value
         except AttributeError as e:
             raise ControlFailure(

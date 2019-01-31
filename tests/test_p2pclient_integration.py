@@ -17,12 +17,17 @@ import multihash
 from p2pclient.datastructures import (
     PeerID,
 )
+from p2pclient.exceptions import (
+    ControlFailure,
+)
 from p2pclient.p2pclient import (
     Client,
-    ControlFailure,
 )
 from p2pclient.serialization import (
     read_pbmsg_safe,
+)
+from p2pclient.utils import (
+    trim_path_unix_prefix,
 )
 
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
@@ -42,14 +47,16 @@ def peer_id_random():
 @pytest.fixture(scope="function", autouse=True)
 def spinup_p2pds(request):
     for i in range(NUM_P2PD):
-        control_path = f"/tmp/test_p2pd_control_{i}"
-        listen_path = f"/tmp/test_p2pd_listen_path_{i}"
+        control_maddr = f"/unix/tmp/test_p2pd_control_{i}.sock"
+        listen_maddr = f"/unix/tmp/test_p2pd_listen_{i}.sock"
         try:
-            os.unlink(listen_path)
+            os.unlink(
+                trim_path_unix_prefix(listen_maddr)
+            )
         except FileNotFoundError:
             pass
-        proc = start_p2pd(control_path)
-        p2pd_info = P2PDInfo(proc, control_path, listen_path)
+        proc = start_p2pd(control_maddr)
+        p2pd_info = P2PDInfo(proc, control_maddr, listen_maddr)
         p2pd_procs[i] = p2pd_info
 
     time.sleep(2)
@@ -62,10 +69,10 @@ def spinup_p2pds(request):
         p2pd_info.proc.wait()
 
 
-def start_p2pd(control_path):
+def start_p2pd(control_maddr):
     cmd_list = [
         "p2pd",
-        f"-sock={control_path}",
+        f"-listen={control_maddr}",
         "-dht=true",
         "-pubsub=true",
         "-pubsubRouter=gossipsub",
@@ -73,11 +80,15 @@ def start_p2pd(control_path):
         "-connHi=1",  # FIXME: used to test conn manager
         "-connGrace=0",  # FIXME: used to test conn manager
     ]
+    unix_sock_path = trim_path_unix_prefix(control_maddr)
     try:
-        os.unlink(control_path)
+        os.unlink(unix_sock_path)
     except FileNotFoundError:
         pass
-    f_log = open('/tmp/p2pd_{}.log'.format(control_path[5:]), 'wb')
+    dirname = os.path.dirname(unix_sock_path)
+    basename = os.path.basename(unix_sock_path)
+    log_base_name = os.path.splitext(basename)[0]
+    f_log = open('{}/{}.log'.format(dirname, log_base_name), 'wb')
     return subprocess.Popen(
         cmd_list,
         stdout=f_log,

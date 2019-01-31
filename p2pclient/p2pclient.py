@@ -5,6 +5,7 @@ import logging
 
 from multiaddr import (
     Multiaddr,
+    protocols,
 )
 
 from . import config
@@ -24,7 +25,6 @@ from .serialization import (
 )
 from .utils import (
     raise_if_failed,
-    trim_path_unix_prefix,
 )
 
 from .pb import p2pd_pb2 as p2pd_pb
@@ -44,19 +44,23 @@ class Client:
 
     def __init__(
             self,
-            _control_maddr=config.control_maddr,
-            _listen_maddr=config.control_maddr):
-        self.control_maddr = Multiaddr(_control_maddr)
-        self.listen_maddr = Multiaddr(_listen_maddr)
+            _control_maddr=None,
+            _listen_maddr=None):
+        if _control_maddr is None:
+            _control_maddr = Multiaddr(config.control_maddr_str)
+        if _listen_maddr is None:
+            _listen_maddr = Multiaddr(config.listen_maddr_str)
+        self.control_maddr = _control_maddr
+        self.listen_maddr = _listen_maddr
         self.handlers = {}
 
     @property
     def control_path(self):
-        return trim_path_unix_prefix(str(self.control_maddr))
+        return self.control_maddr.value_for_protocol(protocols.P_UNIX)
 
     @property
     def listen_path(self):
-        return trim_path_unix_prefix(str(self.listen_maddr))
+        return self.listen_maddr.value_for_protocol(protocols.P_UNIX)
 
     async def _dispatcher(self, reader, writer):
         pb_stream_info = p2pd_pb.StreamInfo()

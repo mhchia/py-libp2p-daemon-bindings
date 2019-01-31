@@ -3,7 +3,6 @@ from .pb import p2pd_pb2 as p2pd_pb
 
 
 def raise_if_failed(response):
-    print("response = ", response)
     if response.type == p2pd_pb.Response.ERROR:
         raise ControlFailure(
             "connect failed. msg={}".format(

@@ -287,6 +287,8 @@ async def test_client_stream_handler_success():
         assert bytes_received == bytes_to_send
 
     await c1.stream_handler(proto, handle_proto)
+    assert proto in c1.handlers
+    assert handle_proto == c1.handlers[proto]
 
     # test case: test the stream handler `handle_proto`
     _, _, writer = await c0.stream_open(
@@ -320,6 +322,8 @@ async def test_client_stream_handler_success():
         assert bytes_received == another_bytes_to_send
 
     await c1.stream_handler(another_proto, handle_another_proto)
+    assert another_proto in c1.handlers
+    assert handle_another_proto == c1.handlers[another_proto]
 
     _, _, another_writer = await c0.stream_open(
         peer_id_1,
@@ -338,6 +342,24 @@ async def test_client_stream_handler_success():
     assert task_another_protocol_handler.exception() is None
 
     another_writer.close()
+
+    # test case: registering twice can override the previous registration
+    event_third = asyncio.Event()
+
+    async def handler_third(stream_info, reader, writer):
+        event_third.set()
+
+    await c1.stream_handler(another_proto, handler_third)
+    assert another_proto in c1.handlers
+    # ensure the handler is override
+    assert handler_third == c1.handlers[another_proto]
+
+    await c0.stream_open(
+        peer_id_1,
+        [another_proto],
+    )
+    # ensure the overriding handler is called when the protocol is opened a stream
+    await event_third.wait()
 
 
 @pytest.mark.asyncio

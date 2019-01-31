@@ -35,7 +35,6 @@ from .pb import crypto_pb2 as crypto_pb
 class Client:
     control_maddr = None
     listen_maddr = None
-    listener = None
 
     handlers = None
 
@@ -69,6 +68,8 @@ class Client:
         try:
             handler = self.handlers[stream_info.proto]
         except KeyError as e:
+            # should never enter here... daemon should reject the stream for us.
+            writer.close()
             raise DispatchFailure(e)
         await handler(stream_info, reader, writer)
 

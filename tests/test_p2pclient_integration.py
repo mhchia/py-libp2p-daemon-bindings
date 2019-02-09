@@ -542,6 +542,8 @@ async def test_client_put_value():
     mh_digest_bytes = mh_digest.encode()
     key = b"/pk/" + mh_digest_bytes
     await c0.put_value(key, value)
+    # test case: get_value
+    await c1.get_value(key) == value
 
     # test case: invalid key
     key_invalid = b"/123/456"

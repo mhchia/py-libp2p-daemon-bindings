@@ -1,9 +1,14 @@
+import asyncio
 from io import (
     BytesIO,
 )
+from typing import (
+    Awaitable,
+    Callable,
+)
 
 
-def write_varint(writer, integer):
+def write_varint(writer: asyncio.StreamWriter, integer: int):
     # TODO: handle negative integers
     if integer < 0:
         raise ValueError(f"Negative integer: {integer}")
@@ -18,21 +23,25 @@ def write_varint(writer, integer):
             break
 
 
-async def read_byte(reader):
+# TODO: pb typing
+async def read_byte(reader: asyncio.StreamReader) -> int:
     data = await reader.readexactly(1)
     return data[0]
 
 
-async def read_varint(reader, read_byte):
-    iteration = 0
-    chunk_bits = 7
-    result = 0
-    has_next = True
+# TODO: pb typing
+async def read_varint(
+        reader: asyncio.StreamReader,
+        read_byte: Callable[[asyncio.StreamReader], Awaitable[int]]) -> int:
+    iteration: int = 0
+    chunk_bits: int = 7
+    result: int = 0
+    has_next: bool = True
     while has_next:
         c = await read_byte(reader)
         value = (c & 0x7f)
         result |= (value << (iteration * chunk_bits))
-        has_next = (c & 0x80)
+        has_next = ((c & 0x80) != 0)
         iteration += 1
         # valid `iteration` should be <= 10.
         # if `iteration` == 10, then there should be only 1 bit useful in the `value`
@@ -42,6 +51,7 @@ async def read_varint(reader, read_byte):
     return result
 
 
+# TODO: pbmsg
 async def read_pbmsg_safe(s, pb_msg):
     len_msg_bytes = await read_varint(s, read_byte)
     msg_bytes = await s.readexactly(len_msg_bytes)

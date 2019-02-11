@@ -2,6 +2,7 @@ import pytest
 
 from multiaddr import (
     Multiaddr,
+    protocols,
 )
 
 from p2pclient import (
@@ -9,7 +10,32 @@ from p2pclient import (
 )
 from p2pclient.p2pclient import (
     Client,
+    parse_conn_protocol,
 )
+
+
+@pytest.mark.parametrize(
+    "maddr_str, expected_proto",
+    (
+        ("/unix/123", protocols.P_UNIX),
+        ("/ip4/127.0.0.1/tcp/7777", protocols.P_IP4),
+    ),
+)
+def test_parse_conn_protocol_valid(maddr_str, expected_proto):
+    assert parse_conn_protocol(Multiaddr(maddr_str)) == expected_proto
+
+
+@pytest.mark.parametrize(
+    "maddr_str",
+    (
+        "/p2p/QmbHVEEepCi7rn7VL7Exxpd2Ci9NNB6ifvqwhsrbRMgQFP",
+        "/onion/timaq4ygg2iegci7:1234",
+    ),
+)
+def test_parse_conn_protocol_invalid(maddr_str):
+    maddr = Multiaddr(maddr_str)
+    with pytest.raises(ValueError):
+        parse_conn_protocol(maddr)
 
 
 @pytest.mark.parametrize(

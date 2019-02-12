@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Optional,
     Tuple,
 )
 
@@ -45,11 +46,39 @@ StreamHandler = Callable[
 ]
 
 
+_supported_conn_protocols = (
+    protocols.P_IP4,
+    # protocols.P_IP6,
+    protocols.P_UNIX,
+)
+
+
+def parse_conn_protocol(maddr: Multiaddr) -> int:
+    proto_codes = set([
+        proto.code
+        for proto in maddr.protocols()
+    ])
+    supported_proto_codes = set(_supported_conn_protocols)
+    proto_cand = proto_codes.intersection(supported_proto_codes)
+    if len(proto_cand) != 1:
+        supported_protos = [
+            protocols.protocol_with_code(proto)
+            for proto in supported_proto_codes
+        ]
+        raise ValueError(
+            "connection protocol should be only one protocol out of {}, maddr={}".format(
+                supported_protos,
+                maddr,
+            )
+        )
+    return tuple(proto_cand)[0]
+
+
 # TODO: add support for socket stream
 class Client:
     control_maddr: Multiaddr
     listen_maddr: Multiaddr
-
+    listener: Optional[asyncio.AbstractServer] = None
     handlers: Dict[str, StreamHandler]
 
     logger = logging.getLogger('p2pclient.Client')
@@ -65,14 +94,6 @@ class Client:
         self.control_maddr = _control_maddr
         self.listen_maddr = _listen_maddr
         self.handlers = {}
-
-    @property
-    def control_path(self) -> str:
-        return self.control_maddr.value_for_protocol(protocols.P_UNIX)
-
-    @property
-    def listen_path(self) -> str:
-        return self.listen_maddr.value_for_protocol(protocols.P_UNIX)
 
     async def _dispatcher(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         pb_stream_info = p2pd_pb.StreamInfo()
@@ -93,12 +114,48 @@ class Client:
         await writer.drain()
 
     async def listen(self) -> None:
+        if self.listener is not None:
+            raise ControlFailure("Listener is already listening")
         # TODO: `start_unix_server` finishes right after awaited, without more coroutine spawn
         #       Then what is serving for the incoming requests?
-        await asyncio.start_unix_server(self._dispatcher, self.listen_path),
+        proto_code = parse_conn_protocol(self.listen_maddr)
+        if proto_code == protocols.P_UNIX:
+            listen_path = self.listen_maddr.value_for_protocol(protocols.P_UNIX)
+            self.listener = await asyncio.start_unix_server(self._dispatcher, listen_path)
+        elif proto_code == protocols.P_IP4:
+            host = self.listen_maddr.value_for_protocol(protocols.P_IP4)
+            port = int(self.listen_maddr.value_for_protocol(protocols.P_TCP))
+            self.listener = await asyncio.start_server(self._dispatcher, host=host, port=port)
+        else:
+            raise ValueError(
+                "protocol not supported: protocol={}".format(
+                    protocols.protocol_with_code(proto_code)
+                )
+            )
+
+    async def close(self) -> None:
+        self.listener.close()  # type: ignore
+        await self.listener.wait_closed()  # type: ignore
+        self.listener = None
+
+    async def open_connection(self) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        proto_code = parse_conn_protocol(self.control_maddr)
+        if proto_code == protocols.P_UNIX:
+            control_path = self.control_maddr.value_for_protocol(protocols.P_UNIX)
+            return await asyncio.open_unix_connection(control_path)
+        elif proto_code == protocols.P_IP4:
+            host = self.control_maddr.value_for_protocol(protocols.P_IP4)
+            port = int(self.control_maddr.value_for_protocol(protocols.P_TCP))
+            return await asyncio.open_connection(host=host, port=port)
+        else:
+            raise ValueError(
+                "protocol not supported: protocol={}".format(
+                    protocols.protocol_with_code(proto_code)
+                )
+            )
 
     async def identify(self) -> Tuple[PeerID, List[Multiaddr]]:
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)  # type: ignore
         await self._write_pb(writer, req)
 
@@ -117,7 +174,7 @@ class Client:
         return peer_id, maddrs
 
     async def connect(self, peer_id: PeerID, maddrs: List[Multiaddr]) -> None:
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
 
         maddrs_bytes = [binascii.unhexlify(i.to_bytes()) for i in maddrs]
         connect_req = p2pd_pb.ConnectRequest(
@@ -138,7 +195,7 @@ class Client:
         req = p2pd_pb.Request(
             type=p2pd_pb.Request.LIST_PEERS,  # type: ignore
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -155,7 +212,7 @@ class Client:
             type=p2pd_pb.Request.DISCONNECT,  # type: ignore
             disconnect=disconnect_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -165,7 +222,7 @@ class Client:
             self,
             peer_id: PeerID,
             protocols: List[str]) -> Tuple[StreamInfo, asyncio.StreamReader, asyncio.StreamWriter]:
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
 
         stream_open_req = p2pd_pb.StreamOpenRequest(
             peer=peer_id.to_bytes(),
@@ -187,7 +244,7 @@ class Client:
         return stream_info, reader, writer
 
     async def stream_handler(self, proto: str, handler_cb: StreamHandler) -> None:
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
 
         # FIXME: should introduce type annotation to solve this elegantly
         handler_sig = inspect.signature(handler_cb).parameters
@@ -220,7 +277,7 @@ class Client:
 
     # TODO: type hints for `p2pd_pb.DHTRequest` and `p2pd_pb.DHTResponse`
     async def _do_dht(self, dht_req):
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         req = p2pd_pb.Request(
             type=p2pd_pb.Request.DHT,
             dht=dht_req,
@@ -390,7 +447,7 @@ class Client:
             type=p2pd_pb.Request.DHT,  # type: ignore
             dht=dht_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -407,7 +464,7 @@ class Client:
             type=p2pd_pb.Request.DHT,  # type: ignore
             dht=dht_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -428,7 +485,7 @@ class Client:
             type=p2pd_pb.Request.CONNMANAGER,  # type: ignore
             connManager=connmgr_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -446,7 +503,7 @@ class Client:
             type=p2pd_pb.Request.CONNMANAGER,  # type: ignore
             connManager=connmgr_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -462,7 +519,7 @@ class Client:
             type=p2pd_pb.Request.CONNMANAGER,  # type: ignore
             connManager=connmgr_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -480,7 +537,7 @@ class Client:
             type=p2pd_pb.Request.PUBSUB,  # type: ignore
             pubsub=pubsub_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -500,7 +557,7 @@ class Client:
             type=p2pd_pb.Request.PUBSUB,  # type: ignore
             pubsub=pubsub_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -521,7 +578,7 @@ class Client:
             type=p2pd_pb.Request.PUBSUB,  # type: ignore
             pubsub=pubsub_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
@@ -538,7 +595,7 @@ class Client:
             type=p2pd_pb.Request.PUBSUB,  # type: ignore
             pubsub=pubsub_req,
         )
-        reader, writer = await asyncio.open_unix_connection(self.control_path)
+        reader, writer = await self.open_connection()
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)

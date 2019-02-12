@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Optional,
     Tuple,
 )
 
@@ -77,6 +78,7 @@ def parse_conn_protocol(maddr: Multiaddr) -> int:
 class Client:
     control_maddr: Multiaddr
     listen_maddr: Multiaddr
+    listener: Optional[asyncio.AbstractServer] = None
     handlers: Dict[str, StreamHandler]
 
     logger = logging.getLogger('p2pclient.Client')
@@ -112,22 +114,29 @@ class Client:
         await writer.drain()
 
     async def listen(self) -> None:
+        if self.listener is not None:
+            raise ControlFailure("Listener is already listening")
         # TODO: `start_unix_server` finishes right after awaited, without more coroutine spawn
         #       Then what is serving for the incoming requests?
         proto_code = parse_conn_protocol(self.listen_maddr)
         if proto_code == protocols.P_UNIX:
             listen_path = self.listen_maddr.value_for_protocol(protocols.P_UNIX)
-            await asyncio.start_unix_server(self._dispatcher, listen_path)
+            self.listener = await asyncio.start_unix_server(self._dispatcher, listen_path)
         elif proto_code == protocols.P_IP4:
             host = self.listen_maddr.value_for_protocol(protocols.P_IP4)
             port = int(self.listen_maddr.value_for_protocol(protocols.P_TCP))
-            await asyncio.start_server(self._dispatcher, host=host, port=port)
+            self.listener = await asyncio.start_server(self._dispatcher, host=host, port=port)
         else:
             raise ValueError(
                 "protocol not supported: protocol={}".format(
                     protocols.protocol_with_code(proto_code)
                 )
             )
+
+    async def close(self) -> None:
+        self.listener.close()  # type: ignore
+        await self.listener.wait_closed()  # type: ignore
+        self.listener = None
 
     async def open_connection(self) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
         proto_code = parse_conn_protocol(self.control_maddr)

@@ -38,21 +38,19 @@ def peer_id_random():
 
 class Daemon:
     control_maddr = None
-    listen_maddr = None
     proc_daemon = None
     f_log = None
     closed = None
 
-    def __init__(self, control_maddr, listen_maddr):
+    def __init__(self, control_maddr):
         self.control_maddr = control_maddr
-        self.listen_maddr = listen_maddr
         self.is_closed = False
         self._start_logging()
         self._run()
 
     def _start_logging(self):
         log_filename = '/tmp/log_p2pd{}.txt'.format(
-            str(self.control_maddr).replace('/', '_')
+            str(self.control_maddr).replace('/', '_').replace('.', '_')
         )
         self.f_log = open(log_filename, 'wb')
 
@@ -81,16 +79,13 @@ class Daemon:
         self.f_log.close()
         self.is_closed = True
 
-    def __del__(self):
-        self.close()
-
 
 async def make_p2pd_pair(serial_no):
-    return await make_p2pd_pair_unix(serial_no)
+    return await make_p2pd_pair_ip4(serial_no)
 
 
 async def _make_p2pd_pair(control_maddr, listen_maddr):
-    p2pd = Daemon(control_maddr, listen_maddr)
+    p2pd = Daemon(control_maddr)
     await asyncio.sleep(2)
     p2pc = Client(control_maddr, listen_maddr)
     await p2pc.listen()
@@ -128,9 +123,49 @@ async def make_p2pd_pairs(number):
 
 
 @pytest.mark.asyncio
+async def test_client_listen():
+    p2pds = await make_p2pd_pairs(1)
+    c0 = p2pds[0].client
+    # test case: ensure the server is listening
+    assert c0.listener is not None
+    assert c0.listener.sockets is not None
+    assert len(c0.listener.sockets) != 0
+    # test case: listen twice
+    with pytest.raises(ControlFailure):
+        await c0.listen()
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
+
+@pytest.mark.asyncio
+async def test_client_close():
+    p2pds = await make_p2pd_pairs(1)
+    c0 = p2pds[0].client
+    # reference to the listener before `Client.close`, since it will set listener to `None`
+    listener = c0.listener
+    assert c0.listener is not None
+    await c0.close()
+    assert c0.listener is None
+    # test case: ensure there is no sockets after closing
+    assert listener.sockets is None
+    # test case: it's fine to listen again, after closing
+    await c0.listen()
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
+
+@pytest.mark.asyncio
 async def test_client_identify():
     p2pds = await make_p2pd_pairs(1)
     await p2pds[0].client.identify()
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -142,6 +177,10 @@ async def test_client_connect_success():
     await c0.connect(peer_id_1, maddrs_1)
     # test case: repeated connections
     await c1.connect(peer_id_0, maddrs_0)
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -159,6 +198,10 @@ async def test_client_connect_failure(peer_id_random):
     # test case: wrong maddrs
     with pytest.raises(ControlFailure):
         await c0.connect(peer_id_1, [Multiaddr("/ip4/127.0.0.1/udp/0")])
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -178,6 +221,10 @@ async def test_client_list_peers():
     assert len(await c1.list_peers()) == 1
     assert len(await c2.list_peers()) == 1
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 async def connect_safe(client_0, client_1):
     peer_id_0, _ = await client_0.identify()
@@ -194,6 +241,10 @@ async def test_connect_safe():
     p2pds = await make_p2pd_pairs(2)
     c0, c1 = p2pds[0].client, p2pds[1].client
     await connect_safe(c0, c1)
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -214,6 +265,10 @@ async def test_client_disconnect(peer_id_random):
     await c1.disconnect(peer_id_0)
     assert len(await c0.list_peers()) == 0
     assert len(await c1.list_peers()) == 0
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -253,6 +308,10 @@ async def test_client_stream_open_success():
     writer.close()
     await asyncio.sleep(0.1)  # yield
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_stream_open_failure():
@@ -278,6 +337,10 @@ async def test_client_stream_open_failure():
             peer_id_1,
             ["another_protocol"],
         )
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 def _get_current_running_dispatched_handler():
@@ -384,6 +447,10 @@ async def test_client_stream_handler_success():
     # ensure the overriding handler is called when the protocol is opened a stream
     await event_third.wait()
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_stream_handler_failure():
@@ -410,6 +477,10 @@ async def test_client_stream_handler_failure():
     with pytest.raises(ControlFailure):
         await c1.stream_handler(proto, handle_proto_wrong_params)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_find_peer_success():
@@ -421,6 +492,10 @@ async def test_client_find_peer_success():
     pinfo = await c0.find_peer(peer_id_2)
     assert pinfo.peer_id == peer_id_2
     assert len(pinfo.addrs) != 0
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -436,6 +511,10 @@ async def test_client_find_peer_failure(peer_id_random):
     with pytest.raises(ControlFailure):
         await c0.find_peer(peer_id_2)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_find_peers_connected_to_peer_success():
@@ -448,6 +527,10 @@ async def test_client_find_peers_connected_to_peer_success():
     pinfos_connecting_to_2 = await c0.find_peers_connected_to_peer(peer_id_2)
     # TODO: need to confirm this behaviour. Why the result is the PeerInfo of `peer_id_2`?
     assert len(pinfos_connecting_to_2) == 1
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -463,6 +546,10 @@ async def test_client_find_peers_connected_to_peer_failure(peer_id_random):
     pinfos = await c0.find_peers_connected_to_peer(peer_id_2)
     assert not pinfos
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_find_providers():
@@ -474,6 +561,10 @@ async def test_client_find_providers():
     pinfos = await c1.find_providers(content_id_bytes, 100)
     assert not pinfos
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_get_closest_peers():
@@ -483,6 +574,10 @@ async def test_client_get_closest_peers():
     await connect_safe(c1, c2)
     peer_ids_1 = await c1.get_closest_peers(b"123")
     assert len(peer_ids_1) == 2
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -497,6 +592,10 @@ async def test_client_get_public_key_success(peer_id_random):
     pk0 = await c0.get_public_key(peer_id_0)
     pk1 = await c0.get_public_key(peer_id_1)
     assert pk0 != pk1
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -513,6 +612,10 @@ async def test_client_get_public_key_failure(peer_id_random):
     # TODO: why?
     await c0.get_public_key(peer_id_2)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_get_value():
@@ -527,6 +630,10 @@ async def test_client_get_value():
     with pytest.raises(ControlFailure):
         await c0.get_value(key_not_existing)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_search_value():
@@ -540,6 +647,10 @@ async def test_client_search_value():
     # test case: non-existing key
     pinfos = await c0.search_value(key_not_existing)
     assert len(pinfos) == 0
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -566,6 +677,10 @@ async def test_client_put_value():
     with pytest.raises(ControlFailure):
         await c0.put_value(key_invalid, key_invalid)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_provide():
@@ -582,6 +697,10 @@ async def test_client_provide():
     pinfos = await c1.find_providers(content_id_bytes, 100)
     assert len(pinfos) == 1
     assert pinfos[0].peer_id == peer_id_0
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -600,6 +719,10 @@ async def test_client_tag_peer(peer_id_random):
     # test case: tag the same peer with the same tag but different weight
     await c1.tag_peer(peer_id_random, "123", 123)
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_untag_peer(peer_id_random):
@@ -612,6 +735,10 @@ async def test_client_untag_peer(peer_id_random):
     await c0.untag_peer(peer_id_random, "123")
     # test case: untag a tag twice
     await c0.untag_peer(peer_id_random, "123")
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -628,6 +755,10 @@ async def test_client_trim():
     await c1.trim()
     # TODO: add a check here to ensure the trim works
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_get_topics():
@@ -635,6 +766,10 @@ async def test_client_get_topics():
     c0 = p2pds[0].client
     topics = await c0.get_topics()
     assert len(topics) == 0
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -644,12 +779,20 @@ async def test_client_list_topic_peers():
     peers = await c0.list_topic_peers("123")
     assert len(peers) == 0
 
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
+
 
 @pytest.mark.asyncio
 async def test_client_publish():
     p2pds = await make_p2pd_pairs(1)
     c0 = p2pds[0].client
     await c0.publish("123", b"data")
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -695,3 +838,7 @@ async def test_client_subscribe():
     await reader_0.read() == b""
     assert topic not in await c0.get_topics()
     assert peer_id_0 not in await c1.list_topic_peers(topic)
+
+    for p2pd_pair in p2pds:
+        p2pd_pair.daemon.close()
+        await p2pd_pair.client.close()

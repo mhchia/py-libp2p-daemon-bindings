@@ -93,14 +93,6 @@ class Client:
         self.listen_maddr = _listen_maddr
         self.handlers = {}
 
-    @property
-    def control_path(self) -> str:
-        return self.control_maddr.value_for_protocol(protocols.P_UNIX)
-
-    @property
-    def listen_path(self) -> str:
-        return self.listen_maddr.value_for_protocol(protocols.P_UNIX)
-
     async def _dispatcher(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         pb_stream_info = p2pd_pb.StreamInfo()
         await read_pbmsg_safe(reader, pb_stream_info)
@@ -124,7 +116,8 @@ class Client:
         #       Then what is serving for the incoming requests?
         proto_code = parse_conn_protocol(self.listen_maddr)
         if proto_code == protocols.P_UNIX:
-            await asyncio.start_unix_server(self._dispatcher, self.listen_path)
+            listen_path = self.listen_maddr.value_for_protocol(protocols.P_UNIX)
+            await asyncio.start_unix_server(self._dispatcher, listen_path)
         elif proto_code == protocols.P_IP4:
             host = self.listen_maddr.value_for_protocol(protocols.P_IP4)
             port = int(self.listen_maddr.value_for_protocol(protocols.P_TCP))
@@ -139,10 +132,11 @@ class Client:
     async def open_connection(self) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
         proto_code = parse_conn_protocol(self.control_maddr)
         if proto_code == protocols.P_UNIX:
-            return await asyncio.open_unix_connection(self.control_path)
+            control_path = self.control_maddr.value_for_protocol(protocols.P_UNIX)
+            return await asyncio.open_unix_connection(control_path)
         elif proto_code == protocols.P_IP4:
-            host = self.listen_maddr.value_for_protocol(protocols.P_IP4)
-            port = int(self.listen_maddr.value_for_protocol(protocols.P_TCP))
+            host = self.control_maddr.value_for_protocol(protocols.P_IP4)
+            port = int(self.control_maddr.value_for_protocol(protocols.P_TCP))
             return await asyncio.open_connection(host=host, port=port)
         else:
             raise ValueError(

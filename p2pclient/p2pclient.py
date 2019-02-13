@@ -161,6 +161,7 @@ class Client:
 
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
         peer_id_bytes = resp.identify.id
         maddrs_bytes = resp.identify.addrs
@@ -189,6 +190,7 @@ class Client:
 
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def list_peers(self) -> List[PeerInfo]:
@@ -199,6 +201,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
         pinfos = [PeerInfo.from_pb(pinfo) for pinfo in resp.peers]  # type: ignore
@@ -216,6 +219,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def stream_open(
@@ -268,6 +272,7 @@ class Client:
 
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
         # if success, add the handler to the dict
@@ -305,6 +310,7 @@ class Client:
             if dht_resp.type == dht_resp.END:  # type: ignore
                 break
             resps.append(dht_resp)
+        writer.close()
         return resps
 
     async def find_peer(self, peer_id: PeerID) -> PeerInfo:
@@ -451,6 +457,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def provide(self, cid: bytes) -> None:
@@ -468,6 +475,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     # connection manager
@@ -489,6 +497,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def untag_peer(self, peer_id: PeerID, tag: str) -> None:
@@ -507,6 +516,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def trim(self) -> None:
@@ -523,6 +533,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     # PubSub
@@ -541,6 +552,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
         return resp.pubsub.topics  # type: ignore
@@ -561,6 +573,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
         peers = [PeerID(peer_id_bytes) for peer_id_bytes in resp.pubsub.peerIDs]  # type: ignore
@@ -582,6 +595,7 @@ class Client:
         await self._write_pb(writer, req)
         resp = p2pd_pb.Response()
         await read_pbmsg_safe(reader, resp)
+        writer.close()
         raise_if_failed(resp)
 
     async def subscribe(self, topic: str) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:

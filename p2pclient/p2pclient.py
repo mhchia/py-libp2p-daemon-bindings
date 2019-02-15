@@ -74,7 +74,6 @@ def parse_conn_protocol(maddr: Multiaddr) -> int:
     return tuple(proto_cand)[0]
 
 
-# TODO: add support for socket stream
 class Client:
     control_maddr: Multiaddr
     listen_maddr: Multiaddr

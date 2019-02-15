@@ -29,7 +29,7 @@ from p2pclient.serialization import (
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 
 
-NUM_P2PDS = 3
+NUM_P2PDS = 4
 
 DaemonPair = namedtuple('DaemonPair', ['daemon', 'client'])
 
@@ -39,6 +39,11 @@ def peer_id_random():
     return PeerID.from_string("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNK1")
 
 
+@pytest.fixture
+def enable_connmgr():
+    return False
+
+
 class Daemon:
     control_maddr = None
     proc_daemon = None
@@ -46,8 +51,9 @@ class Daemon:
     f_log = None
     closed = None
 
-    def __init__(self, control_maddr):
+    def __init__(self, control_maddr, enable_connmgr):
         self.control_maddr = control_maddr
+        self.enable_connmgr = enable_connmgr
         self.is_closed = False
         self._start_logging()
         self._run()
@@ -65,10 +71,14 @@ class Daemon:
             "-dht=true",
             "-pubsub=true",
             "-pubsubRouter=gossipsub",
-            "-connLo=1",  # FIXME: used to test conn manager
-            "-connHi=1",  # FIXME: used to test conn manager
-            "-connGrace=0",  # FIXME: used to test conn manager
         ]
+        if self.enable_connmgr:
+            cmd_list += [
+                "-connManager=true",
+                "-connLo=1",
+                "-connHi=2",
+                "-connGrace=0",
+            ]
         self.proc_daemon = subprocess.Popen(
             cmd_list,
             stdout=self.f_log,
@@ -116,7 +126,7 @@ class ConnectionFailure(Exception):
     pass
 
 
-async def make_p2pd_pair_unix(serial_no):
+async def make_p2pd_pair_unix(serial_no, enable_connmgr):
     control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{serial_no}.sock")
     listen_maddr = Multiaddr(f"/unix/tmp/test_p2pd_listen_{serial_no}.sock")
     # remove the existing unix socket files if they are existing
@@ -128,19 +138,19 @@ async def make_p2pd_pair_unix(serial_no):
         os.unlink(listen_maddr.value_for_protocol(protocols.P_UNIX))
     except FileNotFoundError:
         pass
-    return await _make_p2pd_pair(control_maddr, listen_maddr)
+    return await _make_p2pd_pair(control_maddr, listen_maddr, enable_connmgr)
 
 
-async def make_p2pd_pair_ip4(serial_no):
+async def make_p2pd_pair_ip4(serial_no, enable_connmgr):
     base_port = 35566
     num_ports = 2
     control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{base_port+(serial_no*num_ports)}")
     listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{base_port+(serial_no*num_ports)+1}")
-    return await _make_p2pd_pair(control_maddr, listen_maddr)
+    return await _make_p2pd_pair(control_maddr, listen_maddr, enable_connmgr)
 
 
-async def _make_p2pd_pair(control_maddr, listen_maddr):
-    p2pd = Daemon(control_maddr)
+async def _make_p2pd_pair(control_maddr, listen_maddr, enable_connmgr):
+    p2pd = Daemon(control_maddr, enable_connmgr)
     # wait for daemon ready
     await p2pd.wait_until_ready()
     # TODO: probably remove the sleep and make sure the daemon is correctly spun up
@@ -150,10 +160,10 @@ async def _make_p2pd_pair(control_maddr, listen_maddr):
 
 
 @pytest.fixture(params=[make_p2pd_pair_ip4, make_p2pd_pair_unix])
-async def p2pds(request):
+async def p2pds(request, enable_connmgr):
     make_p2pd_pair = request.param
     pairs = (
-        asyncio.ensure_future(make_p2pd_pair(i))
+        asyncio.ensure_future(make_p2pd_pair(i, enable_connmgr))
         for i in range(NUM_P2PDS)
     )
     p2pd_pairs = await asyncio.gather(*pairs)
@@ -647,6 +657,12 @@ async def test_client_provide(p2pds):
     assert pinfos[0].peer_id == peer_id_0
 
 
+@pytest.mark.parametrize(
+    'enable_connmgr',
+    (
+        True,
+    ),
+)
 @pytest.mark.asyncio
 async def test_client_tag_peer(peer_id_random, p2pds):
     c0, c1 = p2pds[0].client, p2pds[1].client
@@ -663,6 +679,12 @@ async def test_client_tag_peer(peer_id_random, p2pds):
     await c1.tag_peer(peer_id_random, "123", 123)
 
 
+@pytest.mark.parametrize(
+    'enable_connmgr',
+    (
+        True,
+    ),
+)
 @pytest.mark.asyncio
 async def test_client_untag_peer(peer_id_random, p2pds):
     c0 = p2pds[0].client
@@ -675,18 +697,44 @@ async def test_client_untag_peer(peer_id_random, p2pds):
     await c0.untag_peer(peer_id_random, "123")
 
 
+@pytest.mark.parametrize(
+    'enable_connmgr',
+    (
+        True,
+    ),
+)
+@pytest.mark.asyncio
+async def test_client_trim_automatically_by_connmgr(p2pds):
+    c0, c1, c2, c3 = p2pds[0].client, p2pds[1].client, p2pds[2].client, p2pds[3].client
+    await connect_safe(c1, c0)
+    await connect_safe(c1, c2)
+    await connect_safe(c1, c3)
+    # sleep to wait for the goroutine `Connmgr.TrimOpenConns` invoked by `mNotifee.Connected`
+    await asyncio.sleep(1)
+    assert len(await c1.list_peers()) == 2
+
+
+@pytest.mark.parametrize(
+    'enable_connmgr',
+    (
+        True,
+    ),
+)
 @pytest.mark.asyncio
 async def test_client_trim(p2pds):
     c0, c1, c2 = p2pds[0].client, p2pds[1].client, p2pds[2].client
     peer_id_0, _ = await c0.identify()
     peer_id_2, _ = await c2.identify()
-    await connect_safe(c0, c1)
+    await connect_safe(c1, c0)
     await connect_safe(c1, c2)
     assert len(await c1.list_peers()) == 2
     await c1.tag_peer(peer_id_0, "123", 1)
     await c1.tag_peer(peer_id_2, "123", 2)
+    # trim the connections, the number of connections should go down to the low watermark
     await c1.trim()
-    # TODO: add a check here to ensure the trim works
+    peers_1 = await c1.list_peers()
+    assert len(peers_1) == 1
+    assert peers_1[0].peer_id == peer_id_2
 
 
 @pytest.mark.asyncio

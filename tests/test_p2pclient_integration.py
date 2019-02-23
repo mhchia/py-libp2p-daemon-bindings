@@ -199,7 +199,7 @@ async def test_client_close(p2pds):
     assert c0.listener is None
     # test case: ensure there is no sockets after closing
     # for versions before python 3.7 and 3.7+, respectively
-    assert listener.sockets is None or len(listener.socket) == 0
+    assert listener.sockets is None or len(listener.sockets) == 0
     # test case: it's fine to listen again, after closing
     await c0.listen()
 

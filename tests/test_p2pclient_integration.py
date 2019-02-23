@@ -171,8 +171,10 @@ async def p2pds(request, enable_connmgr):
 
     # clean up
     for p2pd_pair in p2pd_pairs:
-        p2pd_pair.daemon.close()
-        await p2pd_pair.client.close()
+        if not p2pd_pair.daemon.is_closed:
+            p2pd_pair.daemon.close()
+        if p2pd_pair.client.listener is not None:
+            await p2pd_pair.client.close()
 
 
 @pytest.mark.asyncio
@@ -196,7 +198,8 @@ async def test_client_close(p2pds):
     await c0.close()
     assert c0.listener is None
     # test case: ensure there is no sockets after closing
-    assert listener.sockets is None
+    # for versions before python 3.7 and 3.7+, respectively
+    assert listener.sockets is None or len(listener.sockets) == 0
     # test case: it's fine to listen again, after closing
     await c0.listen()
 

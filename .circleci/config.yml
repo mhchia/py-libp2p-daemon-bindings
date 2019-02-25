@@ -4,18 +4,6 @@ p2pd_steps: &p2pd_steps
   steps:
     - checkout
     - run:
-        name: set env
-        command: |
-          export GOPATH=$HOME/go
-          export GOROOT=/usr/local/go
-          export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
-    - run:
-        name: test env
-        command: |
-          echo $GOPATH
-          echo $GOROOT
-          echo $PATH
-    - run:
         name: build libp2p daemon
         command: |
           GOPACKAGE=go1.11.5.linux-amd64.tar.gz
@@ -29,7 +17,7 @@ p2pd_steps: &p2pd_steps
           go get $LIBP2P_DAEMON_REPO
           cd $GOPATH/src/$LIBP2P_DAEMON_REPO
           make bin
-          cd -
+          sudo ln -s `which p2pd` /usr/local/bin/
     - run:
         name: install deps
         command: |

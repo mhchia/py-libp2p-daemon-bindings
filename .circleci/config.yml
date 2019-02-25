@@ -16,8 +16,8 @@ p2pd_steps: &p2pd_steps
     - run:
         name: build libp2p daemon
         command: |
-          P2PD_DIR: $HOME/.p2pd
-          P2PD_BINARY: $P2PD_DIR/p2pd-$LIBP2P_DAEMON_VERSION
+          P2PD_DIR=$HOME/.p2pd
+          P2PD_BINARY=$P2PD_DIR/p2pd-$LIBP2P_DAEMON_VERSION
           if [ ! -e "$P2PD_BINARY" ]; then
             wget https://dl.google.com/go/$GOPACKAGE
             sudo tar -C /usr/local -xzf $GOPACKAGE

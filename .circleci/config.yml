@@ -1,19 +1,23 @@
 version: 2
 
+p2pd_env: &p2pd_env
+  LIBP2P_DAEMON_VERSION: de7ca07
+  GOPACKAGE: go1.11.5.linux-amd64.tar.gz
+  LIBP2P_DAEMON_REPO: github.com/libp2p/go-libp2p-daemon
+
 p2pd_steps: &p2pd_steps
   steps:
     - checkout
+    - run:
+        command: echo "$LIBP2P_DAEMON_VERSION" > p2pd-version.txt
     - restore_cache:
         keys:
-          - cache-v0-{{ arch }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+          - cache-v0-{{ arch }}-p2pd-{{ checksum "p2pd-version.txt" }}
     - run:
         name: build libp2p daemon
         command: |
-          GOPACKAGE=go1.11.5.linux-amd64.tar.gz
-          LIBP2P_DAEMON_REPO=github.com/libp2p/go-libp2p-daemon
-          LIBP2P_DAEMON_VERSION=de7ca07
-          P2PD_DIR=$HOME/.p2pd
-          P2PD_BINARY=$P2PD_DIR/p2pd-$LIBP2P_DAEMON_VERSION
+          P2PD_DIR: $HOME/.p2pd
+          P2PD_BINARY: $P2PD_DIR/p2pd-$LIBP2P_DAEMON_VERSION
           if [ ! -e "$P2PD_BINARY" ]; then
             wget https://dl.google.com/go/$GOPACKAGE
             sudo tar -C /usr/local -xzf $GOPACKAGE
@@ -30,10 +34,16 @@ p2pd_steps: &p2pd_steps
             cd -
           fi
           sudo ln -s $P2PD_BINARY /usr/local/bin/p2pd
+    - save_cache:
+        paths:
+          - ~/.p2pd
+        key: cache-v0-{{ arch }}-p2pd-{{ checksum "p2pd-version.txt" }}
+    - restore_cache:
+        keys:
+          - cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
     - run:
         name: install deps
-        command: |
-          pip install --user tox codecov
+        command: pip install --user tox codecov
     - run:
         name: run tests
         command: |
@@ -41,14 +51,24 @@ p2pd_steps: &p2pd_steps
           ~/.local/bin/tox
     - run:
         name: update codecov
-        command: codecov
+        command: ~/.local/bin/codecov
     - save_cache:
         paths:
           - .tox
           - ~/.cache/pip
           - ~/.local
-          - ~/.p2pd
-        key: cache-v0-{{ arch }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+        key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+
+
+common_steps: &common_steps
+  steps:
+    - checkout
+    - run:
+        command: |
+          pip install --upgrade pip
+          pip install --user tox codecov
+          ~/.local/bin/tox
+
 
 jobs:
   lint:
@@ -68,6 +88,7 @@ jobs:
       - image: circleci/python:3.6
         environment:
           TOXENV: py36
+          <<: *p2pd_env
     <<: *p2pd_steps
 
 workflows:

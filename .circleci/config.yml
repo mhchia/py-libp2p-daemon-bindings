@@ -1,0 +1,58 @@
+version: 2
+
+p2pd_steps: &p2pd_steps
+  steps:
+    - checkout
+    - run:
+        name: build libp2p daemon
+        command: |
+          GOPACKAGE=go1.11.5.linux-amd64.tar.gz
+          LIBP2P_DAEMON_REPO=github.com/libp2p/go-libp2p-daemon
+          wget https://dl.google.com/go/$GOPACKAGE
+          sudo tar -C /usr/local -xzf $GOPACKAGE
+          export GOPATH=$HOME/go
+          export GOROOT=/usr/local/go
+          export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+          go version
+          go get $LIBP2P_DAEMON_REPO
+          cd $GOPATH/src/$LIBP2P_DAEMON_REPO
+          make bin
+          cd -
+    - run:
+        name: install deps
+        command: |
+          pip install --upgrade pip
+          pip install --user tox codecov
+    - run:
+        name: run tests
+        command: ~/.local/bin/tox
+    - run:
+        name: update codecov
+        command: codecov
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: lint
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --upgrade pip
+            pip install --user tox codecov
+            ~/.local/bin/tox
+  py36-test:
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: py36
+    <<: *p2pd_steps
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - lint
+      - py36-test

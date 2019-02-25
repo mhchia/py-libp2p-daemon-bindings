@@ -18,14 +18,15 @@ p2pd_steps: &p2pd_steps
           cd $GOPATH/src/$LIBP2P_DAEMON_REPO
           make bin
           cd -
-          p2pd --help
     - run:
         name: install deps
         command: |
           pip install --user tox codecov
     - run:
         name: run tests
-        command: ~/.local/bin/tox
+        command: |
+          command -v p2pd
+          ~/.local/bin/tox
     - run:
         name: update codecov
         command: codecov

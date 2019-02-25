@@ -9,6 +9,7 @@ p2pd_steps: &p2pd_steps
   steps:
     - checkout
     - run:
+        name: generate a temporary file, just to get the checksum from LIBP2P_DAEMON_VERSION
         command: echo "$LIBP2P_DAEMON_VERSION" > p2pd-version.txt
     - restore_cache:
         keys:
@@ -59,17 +60,6 @@ p2pd_steps: &p2pd_steps
           - ~/.local
         key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
 
-
-common_steps: &common_steps
-  steps:
-    - checkout
-    - run:
-        command: |
-          pip install --upgrade pip
-          pip install --user tox codecov
-          ~/.local/bin/tox
-
-
 jobs:
   lint:
     docker:
@@ -78,16 +68,31 @@ jobs:
           TOXENV: lint
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
       - run:
           command: |
-            pip install --upgrade pip
             pip install --user tox codecov
             ~/.local/bin/tox
+      - save_cache:
+          paths:
+            - .tox
+            - ~/.cache/pip
+            - ~/.local
+          key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
   py36-test:
     docker:
       - image: circleci/python:3.6
         environment:
           TOXENV: py36
+          <<: *p2pd_env
+    <<: *p2pd_steps
+  py37-test:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          TOXENV: py37
           <<: *p2pd_env
     <<: *p2pd_steps
 
@@ -97,3 +102,4 @@ workflows:
     jobs:
       - lint
       - py36-test
+      - py37-test

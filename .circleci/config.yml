@@ -48,8 +48,7 @@ p2pd_steps: &p2pd_steps
           - ~/.cache/pip
           - ~/.local
           - ~/.p2pd
-        key:
-          - cache-v0-{{ arch }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+        key: cache-v0-{{ arch }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
 
 jobs:
   lint:

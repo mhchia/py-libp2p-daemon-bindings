@@ -2,54 +2,99 @@ import io
 
 import pytest
 
-
 from p2pclient.serialization import (
-    read_varint,
-    write_varint,
+    read_unsigned_varint,
+    write_unsigned_varint,
 )
 
 
-def test_serialize():
-    pass
-
-
-def test_pb_readwriter():
-    pass
-
-
-@pytest.mark.parametrize(
-    "value, expected_result",
-    (
-        (0, b'\x00'),
-        (1, b'\x01'),
-        (128, b'\x80\x01'),
-        (2 ** 32, b'\x80\x80\x80\x80\x10'),
-        (2 ** 64 - 1, b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01'),
-    ),
+pairs_int_varint_valid = (
+    (0, b'\x00'),
+    (1, b'\x01'),
+    (128, b'\x80\x01'),
+    (2 ** 32, b'\x80\x80\x80\x80\x10'),
+    (2 ** 64 - 1, b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01'),
 )
-def test_write_varint(value, expected_result):
-    s0 = io.BytesIO()
-    write_varint(s0, value)
-    assert s0.getvalue() == expected_result
+
+pairs_int_varint_overflow = (
+    (2 ** 64, b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x02'),
+    (2 ** 64 + 1, b'\x81\x80\x80\x80\x80\x80\x80\x80\x80\x02'),
+    (2 ** 128, b'\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x04'),
+)
+
+
+class MockReaderWriter(io.BytesIO):
+    async def readexactly(self, n):
+        return self.read(n)
 
 
 @pytest.mark.parametrize(
-    "value",
-    (0, 1, 128, 2 ** 32, 2 ** 64 - 1),
+    "integer, var_integer",
+    pairs_int_varint_valid,
+)
+def test_write_unsigned_varint(integer, var_integer):
+    s = MockReaderWriter()
+    write_unsigned_varint(s, integer)
+    assert s.getvalue() == var_integer
+
+
+@pytest.mark.parametrize(
+    "integer",
+    tuple(i[0] for i in pairs_int_varint_overflow),
 )
 @pytest.mark.asyncio
-async def test_read_write_varint(value):
-    s = io.BytesIO()
-    write_varint(s, value)
-    s.seek(0, 0)
-
-    async def read_byte(s):
-        data = s.read(1)
-        return data[0]
-
-    result = await read_varint(s, read_byte)
-    assert value == result
+async def test_write_unsigned_varint_overflow(integer):
+    s = MockReaderWriter()
+    with pytest.raises(ValueError):
+        write_unsigned_varint(s, integer)
 
 
-def test_read_varint_overflow():
-    pass
+@pytest.mark.parametrize(
+    "integer",
+    (-1, -2**32, -2**64, -2**128),
+)
+@pytest.mark.asyncio
+async def test_write_unsigned_varint_negative(integer):
+    s = MockReaderWriter()
+    with pytest.raises(ValueError):
+        write_unsigned_varint(s, integer)
+
+
+@pytest.mark.parametrize(
+    "integer, var_integer",
+    pairs_int_varint_valid,
+)
+@pytest.mark.asyncio
+async def test_read_unsigned_varint(integer, var_integer):
+    s = MockReaderWriter(var_integer)
+    result = await read_unsigned_varint(s)
+    assert result == integer
+
+
+@pytest.mark.parametrize(
+    "var_integer",
+    tuple(i[1] for i in pairs_int_varint_overflow),
+)
+@pytest.mark.asyncio
+async def test_read_unsigned_varint_overflow(var_integer):
+    s = MockReaderWriter(var_integer)
+    with pytest.raises(ValueError):
+        await read_unsigned_varint(s)
+
+
+@pytest.mark.parametrize(
+    "max_bits",
+    (2, 31, 32, 63, 64, 127, 128),
+)
+@pytest.mark.asyncio
+async def test_read_write_unsigned_varint_max_bits_edge(max_bits):
+    """
+    Test the edge with different `max_bits`
+    """
+    for i in range(-3, 0):
+        integer = i + (2 ** max_bits)
+        s = MockReaderWriter()
+        write_unsigned_varint(s, integer, max_bits=max_bits)
+        s.seek(0, 0)
+        result = await read_unsigned_varint(s, max_bits=max_bits)
+        assert integer == result

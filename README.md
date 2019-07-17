@@ -1,6 +1,6 @@
 # py-libp2p-daemon-bindings
 
-[![Build Status](https://travis-ci.org/mhchia/py-libp2p-daemon-bindings.svg?branch=master)](https://travis-ci.org/mhchia/py-libp2p-daemon-bindings)
+[![Build Status](https://circleci.com/gh/mhchia/py-libp2p-daemon-bindings/tree/master.svg?style=shield)](https://circleci.com/gh/mhchia/py-libp2p-daemon-bindings/tree/master)
 
 > The [libp2p daemon](https://github.com/libp2p/go-libp2p-daemon) bindings for Python
 

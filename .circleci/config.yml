@@ -1,0 +1,77 @@
+version: 2
+
+p2pd_steps: &p2pd_steps
+  steps:
+    - checkout
+    - restore_cache:
+        keys:
+          - cache-v0-{{ arch }}-p2pd-{{ checksum "./.circleci/install_p2pd.sh" }}
+    - run:
+        name: build libp2p daemon
+        command: ./.circleci/install_p2pd.sh
+    - save_cache:
+        paths:
+          - ~/.p2pd
+        key: cache-v0-{{ arch }}-p2pd-{{ checksum "./.circleci/install_p2pd.sh" }}
+    - restore_cache:
+        keys:
+          - cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+    - run:
+        name: install deps
+        command: pip install --user tox codecov
+    - run:
+        name: run tests
+        command: |
+          command -v p2pd
+          ~/.local/bin/tox
+    - run:
+        name: update codecov
+        command: ~/.local/bin/codecov
+    - save_cache:
+        paths:
+          - .tox
+          - ~/.cache/pip
+          - ~/.local
+        key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: lint
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+      - run:
+          command: |
+            pip install --user tox codecov
+            ~/.local/bin/tox
+      - save_cache:
+          paths:
+            - .tox
+            - ~/.cache/pip
+            - ~/.local
+          key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+  py36-test:
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TOXENV: py36
+    <<: *p2pd_steps
+  py37-test:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          TOXENV: py37
+    <<: *p2pd_steps
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - lint
+      - py36-test
+      - py37-test

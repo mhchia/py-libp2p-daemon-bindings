@@ -18,15 +18,16 @@ setuptools.setup(
     url="https://github.com/mhchia/py-libp2p-daemon-bindings",
     packages=setuptools.find_packages(),
     install_requires=[
-        "base58",
-        # use my forked multiaddr temporarily until the fixing PR is merged
-        "multiaddr @ git+https://git@github.com/mhchia/py-multiaddr@feature/add-unix-proto",
-        "protobuf",
+        "base58>=1.0.3",
+        "multiaddr>=0.0.8,<0.1.0",
+        "protobuf>=3.6.1",
+        "pymultihash>=0.8.2",
     ],
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 )

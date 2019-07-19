@@ -16,7 +16,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mhchia/py-libp2p-daemon-bindings",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         "base58>=1.0.3",
         "multiaddr>=0.0.8,<0.1.0",

@@ -897,6 +897,7 @@ async def test_connmgr_client_untag_peer(peer_id_random, p2pds):
     await p2pds[0].connmgr.untag_peer(peer_id_random, "123")
 
 
+@pytest.mark.skip("Skipped because automatic trim is not stable to test")
 @pytest.mark.parametrize(
     'enable_control, enable_connmgr',
     (

@@ -1,9 +1,0 @@
---index-url https://pypi.python.org/simple/
-
-codecov
-pytest
-pytest-asyncio
-pytest-cov
-tox
-flake8
-mypy

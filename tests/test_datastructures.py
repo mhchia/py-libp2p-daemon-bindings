@@ -1,36 +1,30 @@
 import pytest
 
-from multiaddr import (
-    Multiaddr,
-)
+from multiaddr import Multiaddr
 
-from p2pclient.p2pclient import (
-    PeerID,
-    PeerInfo,
-    StreamInfo,
-)
+from p2pclient.p2pclient import PeerID, PeerInfo, StreamInfo
 
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 
 
-@pytest.fixture('module')
+@pytest.fixture("module")
 def peer_id_string():
     return "QmS5QmciTXXnCUCyxud5eWFenUMAmvAWSDa1c7dvdXRMZ7"
 
 
-@pytest.fixture('module')
+@pytest.fixture("module")
 def peer_id_bytes():
     return b'\x12 7\x87F.[\xb5\xb1o\xe5*\xc7\xb9\xbb\x11:"Z|j2\x8ad\x1b\xa6\xe5<Ip\xfe\xb4\xf5v'
 
 
-@pytest.fixture('module')
+@pytest.fixture("module")
 def peer_id(peer_id_bytes):
     return PeerID(peer_id_bytes)
 
 
-@pytest.fixture('module')
+@pytest.fixture("module")
 def maddr():
-    return Multiaddr('/unix/123')
+    return Multiaddr("/unix/123")
 
 
 def test_peer_id(peer_id_string, peer_id_bytes, peer_id):
@@ -49,7 +43,7 @@ def test_peer_id(peer_id_string, peer_id_bytes, peer_id):
 
 
 def test_stream_info(peer_id, maddr):
-    proto = '123'
+    proto = "123"
     # test case: `StreamInfo.__init__`
     si = StreamInfo(peer_id, maddr, proto)
     assert si.peer_id == peer_id
@@ -73,10 +67,7 @@ def test_peer_info(peer_id, maddr):
     assert pi.peer_id == peer_id
     assert pi.addrs == [maddr]
     # test case: `PeerInfo.from_pb`
-    pi_pb = p2pd_pb.PeerInfo(
-        id=peer_id.to_bytes(),
-        addrs=[maddr.to_bytes()],
-    )
+    pi_pb = p2pd_pb.PeerInfo(id=peer_id.to_bytes(), addrs=[maddr.to_bytes()])
     pi_1 = PeerInfo.from_pb(pi_pb)
     assert pi.peer_id == pi_1.peer_id
     assert pi.addrs == pi_1.addrs

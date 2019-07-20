@@ -18,7 +18,7 @@ p2pd_steps: &p2pd_steps
           - cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
     - run:
         name: install deps
-        command: pip install --user tox
+        command: pip install --user tox codecov
     - run:
         name: run tests
         command: |

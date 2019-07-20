@@ -15,7 +15,7 @@ deps = {
         "protobuf>=3.6.1",
         "pymultihash>=0.8.2",
     ],
-    "test": ["codecov", "pytest", "pytest-asyncio", "pytest-cov"],
+    "test": ["pytest", "pytest-asyncio", "pytest-cov"],
     "lint": ["flake8", "mypy", "black"],
     "dev": ["tox"],
 }

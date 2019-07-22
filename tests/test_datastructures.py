@@ -2,7 +2,7 @@ import pytest
 
 from multiaddr import Multiaddr
 
-from p2pclient.p2pclient import PeerID, PeerInfo, StreamInfo
+from p2pclient.datastructures import PeerID, PeerInfo, StreamInfo
 
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 

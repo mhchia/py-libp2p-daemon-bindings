@@ -8,13 +8,9 @@ from multiaddr import Multiaddr, protocols
 from google.protobuf.message import EncodeError
 
 from p2pclient import config
-from p2pclient.p2pclient import (
-    Client,
-    ControlClient,
-    parse_conn_protocol,
-    read_pbmsg_safe,
-    write_pbmsg,
-)
+from p2pclient.control import parse_conn_protocol
+from p2pclient.p2pclient import DaemonConnector, ControlClient
+from p2pclient.utils import read_pbmsg_safe, write_pbmsg
 from p2pclient.serialization import write_unsigned_varint
 
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
@@ -52,23 +48,25 @@ def test_parse_conn_protocol_invalid(maddr_str):
 
 @pytest.mark.parametrize("control_maddr_str", ("/unix/123", "/ip4/127.0.0.1/tcp/6666"))
 def test_client_ctor_control_maddr(control_maddr_str):
-    c = Client(Multiaddr(control_maddr_str))
+    c = DaemonConnector(Multiaddr(control_maddr_str))
     assert c.control_maddr == Multiaddr(control_maddr_str)
 
 
 def test_client_ctor_default_control_maddr():
-    c = Client()
+    c = DaemonConnector()
     assert c.control_maddr == Multiaddr(config.control_maddr_str)
 
 
 @pytest.mark.parametrize("listen_maddr_str", ("/unix/123", "/ip4/127.0.0.1/tcp/6666"))
 def test_control_client_ctor_listen_maddr(listen_maddr_str):
-    c = ControlClient(client=Client(), listen_maddr=Multiaddr(listen_maddr_str))
+    c = ControlClient(
+        daemon_connector=DaemonConnector(), listen_maddr=Multiaddr(listen_maddr_str)
+    )
     assert c.listen_maddr == Multiaddr(listen_maddr_str)
 
 
 def test_control_client_ctor_default_listen_maddr():
-    c = ControlClient(client=Client())
+    c = ControlClient(daemon_connector=DaemonConnector())
     assert c.listen_maddr == Multiaddr(config.listen_maddr_str)
 
 

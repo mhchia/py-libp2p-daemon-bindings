@@ -16,7 +16,7 @@ deps = {
         "pymultihash>=0.8.2",
     ],
     "test": ["pytest", "pytest-asyncio", "pytest-cov"],
-    "lint": ["flake8", "mypy", "black"],
+    "lint": ["flake8", "mypy", "black", "mypy-protobuf"],
     "dev": ["tox"],
 }
 

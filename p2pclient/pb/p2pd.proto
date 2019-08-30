@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package p2pd.pb;
+package p2pclient.p2pd.pb;
 
 message Request {
   enum Type {

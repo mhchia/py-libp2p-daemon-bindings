@@ -1,5 +1,6 @@
+from libp2p.peer.id import ID
+
 from .control import DaemonConnector
-from .datastructures import PeerID
 from .pb import p2pd_pb2 as p2pd_pb
 from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
 
@@ -10,7 +11,7 @@ class ConnectionManagerClient:
     def __init__(self, daemon_connector: DaemonConnector) -> None:
         self.daemon_connector = daemon_connector
 
-    async def tag_peer(self, peer_id: PeerID, tag: str, weight: int) -> None:
+    async def tag_peer(self, peer_id: ID, tag: str, weight: int) -> None:
         """TAG_PEER
         """
         connmgr_req = p2pd_pb.ConnManagerRequest(
@@ -27,7 +28,7 @@ class ConnectionManagerClient:
         writer.close()
         raise_if_failed(resp)
 
-    async def untag_peer(self, peer_id: PeerID, tag: str) -> None:
+    async def untag_peer(self, peer_id: ID, tag: str) -> None:
         """UNTAG_PEER
         """
         connmgr_req = p2pd_pb.ConnManagerRequest(

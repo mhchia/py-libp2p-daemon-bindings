@@ -2,16 +2,14 @@ import asyncio
 import logging
 from typing import Awaitable, Callable, Dict, Iterable, Sequence, Tuple
 
+from libp2p.peer.id import ID
 from multiaddr import Multiaddr, protocols
 
 from . import config
-
-from .datastructures import PeerID, PeerInfo, StreamInfo
+from .datastructures import PeerInfo, StreamInfo
 from .exceptions import ControlFailure, DispatchFailure
-from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
-
 from .pb import p2pd_pb2 as p2pd_pb
-
+from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
 
 StreamHandler = Callable[
     [StreamInfo, asyncio.StreamReader, asyncio.StreamWriter], Awaitable[None]
@@ -128,7 +126,7 @@ class ControlClient:
         self.listener = None
         self.logger.info("DaemonConnector %s closed", self)
 
-    async def identify(self) -> Tuple[PeerID, Tuple[Multiaddr, ...]]:
+    async def identify(self) -> Tuple[ID, Tuple[Multiaddr, ...]]:
         reader, writer = await self.daemon_connector.open_connection()
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
         await write_pbmsg(writer, req)
@@ -141,11 +139,11 @@ class ControlClient:
         maddrs_bytes = resp.identify.addrs
 
         maddrs = tuple(Multiaddr(maddr_bytes) for maddr_bytes in maddrs_bytes)
-        peer_id = PeerID(peer_id_bytes)
+        peer_id = ID(peer_id_bytes)
 
         return peer_id, maddrs
 
-    async def connect(self, peer_id: PeerID, maddrs: Iterable[Multiaddr]) -> None:
+    async def connect(self, peer_id: ID, maddrs: Iterable[Multiaddr]) -> None:
         reader, writer = await self.daemon_connector.open_connection()
 
         maddrs_bytes = [i.to_bytes() for i in maddrs]
@@ -172,7 +170,7 @@ class ControlClient:
         peers = tuple(PeerInfo.from_pb(pinfo) for pinfo in resp.peers)
         return peers
 
-    async def disconnect(self, peer_id: PeerID) -> None:
+    async def disconnect(self, peer_id: ID) -> None:
         disconnect_req = p2pd_pb.DisconnectRequest(peer=peer_id.to_bytes())
         req = p2pd_pb.Request(
             type=p2pd_pb.Request.DISCONNECT, disconnect=disconnect_req
@@ -185,7 +183,7 @@ class ControlClient:
         raise_if_failed(resp)
 
     async def stream_open(
-        self, peer_id: PeerID, protocols: Sequence[str]
+        self, peer_id: ID, protocols: Sequence[str]
     ) -> Tuple[StreamInfo, asyncio.StreamReader, asyncio.StreamWriter]:
         reader, writer = await self.daemon_connector.open_connection()
 

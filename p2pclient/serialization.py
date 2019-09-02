@@ -2,7 +2,6 @@ import asyncio
 from io import BytesIO
 from typing import TypeVar
 
-
 Writer = TypeVar("Writer", BytesIO, asyncio.StreamWriter)
 
 

@@ -1,14 +1,15 @@
 import asyncio
 from typing import Iterable, Sequence, Tuple
 
+from libp2p.crypto.pb import crypto_pb2 as crypto_pb
+from libp2p.peer.id import ID
 from multiaddr import Multiaddr
 
-from .control import ControlClient, DaemonConnector, StreamHandler
 from .connmgr import ConnectionManagerClient
+from .control import ControlClient, DaemonConnector, StreamHandler
+from .datastructures import PeerInfo, StreamInfo
 from .dht import DHTClient
 from .pubsub import PubSubClient
-from .datastructures import PeerID, PeerInfo, StreamInfo
-from .pb import crypto_pb2 as crypto_pb
 
 
 class Client:
@@ -34,40 +35,40 @@ class Client:
     async def close(self) -> None:
         await self.control.close()
 
-    async def identify(self) -> Tuple[PeerID, Tuple[Multiaddr, ...]]:
+    async def identify(self) -> Tuple[ID, Tuple[Multiaddr, ...]]:
         return await self.control.identify()
 
-    async def connect(self, peer_id: PeerID, maddrs: Iterable[Multiaddr]) -> None:
+    async def connect(self, peer_id: ID, maddrs: Iterable[Multiaddr]) -> None:
         await self.control.connect(peer_id=peer_id, maddrs=maddrs)
 
     async def list_peers(self) -> Tuple[PeerInfo, ...]:
         return await self.control.list_peers()
 
-    async def disconnect(self, peer_id: PeerID) -> None:
+    async def disconnect(self, peer_id: ID) -> None:
         await self.control.disconnect(peer_id=peer_id)
 
     async def stream_open(
-        self, peer_id: PeerID, protocols: Sequence[str]
+        self, peer_id: ID, protocols: Sequence[str]
     ) -> Tuple[StreamInfo, asyncio.StreamReader, asyncio.StreamWriter]:
         return await self.control.stream_open(peer_id=peer_id, protocols=protocols)
 
     async def stream_handler(self, proto: str, handler_cb: StreamHandler) -> None:
         await self.control.stream_handler(proto=proto, handler_cb=handler_cb)
 
-    async def connmgr_tag_peer(self, peer_id: PeerID, tag: str, weight: int) -> None:
+    async def connmgr_tag_peer(self, peer_id: ID, tag: str, weight: int) -> None:
         await self.connmgr.tag_peer(peer_id=peer_id, tag=tag, weight=weight)
 
-    async def connmgr_untag_peer(self, peer_id: PeerID, tag: str) -> None:
+    async def connmgr_untag_peer(self, peer_id: ID, tag: str) -> None:
         await self.connmgr.untag_peer(peer_id=peer_id, tag=tag)
 
     async def connmgr_trim(self) -> None:
         await self.connmgr.trim()
 
-    async def dht_find_peer(self, peer_id: PeerID) -> PeerInfo:
+    async def dht_find_peer(self, peer_id: ID) -> PeerInfo:
         return await self.dht.find_peer(peer_id=peer_id)
 
     async def dht_find_peers_connected_to_peer(
-        self, peer_id: PeerID
+        self, peer_id: ID
     ) -> Tuple[PeerInfo, ...]:
         return await self.dht.find_peers_connected_to_peer(peer_id=peer_id)
 
@@ -78,10 +79,10 @@ class Client:
             content_id_bytes=content_id_bytes, count=count
         )
 
-    async def dht_get_closest_peers(self, key: bytes) -> Tuple[PeerID, ...]:
+    async def dht_get_closest_peers(self, key: bytes) -> Tuple[ID, ...]:
         return await self.dht.get_closest_peers(key=key)
 
-    async def dht_get_public_key(self, peer_id: PeerID) -> crypto_pb.PublicKey:
+    async def dht_get_public_key(self, peer_id: ID) -> crypto_pb.PublicKey:
         return await self.dht.get_public_key(peer_id=peer_id)
 
     async def dht_get_value(self, key: bytes) -> bytes:
@@ -99,7 +100,7 @@ class Client:
     async def pubsub_get_topics(self) -> Tuple[str, ...]:
         return await self.pubsub.get_topics()
 
-    async def pubsub_list_peers(self, topic: str) -> Tuple[PeerID, ...]:
+    async def pubsub_list_peers(self, topic: str) -> Tuple[ID, ...]:
         return await self.pubsub.list_peers(topic=topic)
 
     async def pubsub_publish(self, topic: str, data: bytes) -> None:

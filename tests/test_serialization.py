@@ -4,7 +4,6 @@ import pytest
 
 from p2pclient.serialization import read_unsigned_varint, write_unsigned_varint
 
-
 pairs_int_varint_valid = (
     (0, b"\x00"),
     (1, b"\x01"),

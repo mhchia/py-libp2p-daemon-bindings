@@ -1,9 +1,8 @@
+from libp2p.peer.id import ID
+from multiaddr import Multiaddr
 import pytest
 
-from multiaddr import Multiaddr
-
-from p2pclient.datastructures import PeerID, PeerInfo, StreamInfo
-
+from p2pclient.datastructures import PeerInfo, StreamInfo
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 
 
@@ -19,7 +18,7 @@ def peer_id_bytes():
 
 @pytest.fixture("module")
 def peer_id(peer_id_bytes):
-    return PeerID(peer_id_bytes)
+    return ID(peer_id_bytes)
 
 
 @pytest.fixture("module")
@@ -32,13 +31,13 @@ def test_peer_id(peer_id_string, peer_id_bytes, peer_id):
     assert peer_id.to_bytes() == peer_id_bytes
     assert peer_id.to_string() == peer_id_string
     # test initialized with string
-    peer_id_2 = PeerID.from_base58(peer_id_string)
+    peer_id_2 = ID.from_base58(peer_id_string)
     assert peer_id_2.to_bytes() == peer_id_bytes
     assert peer_id_2.to_string() == peer_id_string
     # test equal
     assert peer_id == peer_id_2
     # test not equal
-    peer_id_3 = PeerID.from_base58("QmbmfNDEth7Ucvjuxiw3SP3E4PoJzbk7g4Ge6ZDigbCsNp")
+    peer_id_3 = ID.from_base58("QmbmfNDEth7Ucvjuxiw3SP3E4PoJzbk7g4Ge6ZDigbCsNp")
     assert peer_id != peer_id_3
 
 

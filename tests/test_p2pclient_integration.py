@@ -5,19 +5,15 @@ import subprocess
 import time
 from typing import NamedTuple
 
+from libp2p.peer.id import ID
+from multiaddr import Multiaddr, protocols
+import multihash
 import pytest
 
-from multiaddr import Multiaddr, protocols
-
-import multihash
-
-from p2pclient.datastructures import PeerID
 from p2pclient.exceptions import ControlFailure
 from p2pclient.p2pclient import Client
-from p2pclient.utils import read_pbmsg_safe
-
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
-
+from p2pclient.utils import read_pbmsg_safe
 
 TIMEOUT_DURATION = 120  # seconds
 
@@ -29,7 +25,7 @@ def num_p2pds():
 
 @pytest.fixture(scope="module")
 def peer_id_random():
-    return PeerID.from_base58("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNK1")
+    return ID.from_base58("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNK1")
 
 
 @pytest.fixture
@@ -649,7 +645,7 @@ async def test_client_dht_put_value(p2pcs):
     pk0 = await p2pcs[0].dht_get_public_key(peer_id_0)
     # make the `key` from pk0
     algo = multihash.Func.sha2_256
-    value = pk0.Data
+    value = pk0.data
     mh_digest = multihash.digest(value, algo)
     mh_digest_bytes = mh_digest.encode()
     key = b"/pk/" + mh_digest_bytes
@@ -810,14 +806,14 @@ async def test_client_pubsub_subscribe(p2pcs):
     await read_pbmsg_safe(reader_1_another, pubsub_msg_1_another)
     assert pubsub_msg_1_another.data == another_data_0
     # test case: test `from_field`
-    assert PeerID(pubsub_msg_1_1.from_field) == peer_id_0
+    assert ID(pubsub_msg_1_1.from_field) == peer_id_0
     # test case: test `from_field`, when it is sent through 1 hop(p2pcs[1])
     reader_2, _ = await p2pcs[2].pubsub_subscribe(topic)
     another_data_2 = b"another_data_2"
     await p2pcs[0].pubsub_publish(topic, another_data_2)
     pubsub_msg_2_0 = p2pd_pb.PSMessage()
     await read_pbmsg_safe(reader_2, pubsub_msg_2_0)
-    assert PeerID(pubsub_msg_2_0.from_field) == peer_id_0
+    assert ID(pubsub_msg_2_0.from_field) == peer_id_0
     # test case: unsubscribe by closing the stream
     writer_0.close()
     await asyncio.sleep(0)

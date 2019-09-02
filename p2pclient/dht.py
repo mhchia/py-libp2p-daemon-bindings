@@ -1,11 +1,14 @@
 import asyncio
 from typing import AsyncGenerator, Tuple
 
-from .datastructures import PeerID, PeerInfo
-from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
+from libp2p.crypto.pb import crypto_pb2 as crypto_pb
+from libp2p.peer.id import ID
+
 from .control import DaemonConnector
+from .datastructures import PeerInfo
 from .exceptions import ControlFailure
-from .pb import p2pd_pb2 as p2pd_pb, crypto_pb2 as crypto_pb
+from .pb import p2pd_pb2 as p2pd_pb
+from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
 
 
 class DHTClient:
@@ -50,7 +53,7 @@ class DHTClient:
         writer.close()
         return resps
 
-    async def find_peer(self, peer_id: PeerID) -> PeerInfo:
+    async def find_peer(self, peer_id: ID) -> PeerInfo:
         """FIND_PEER
         """
         dht_req = p2pd_pb.DHTRequest(
@@ -70,9 +73,7 @@ class DHTClient:
             )
         return PeerInfo.from_pb(pinfo)
 
-    async def find_peers_connected_to_peer(
-        self, peer_id: PeerID
-    ) -> Tuple[PeerInfo, ...]:
+    async def find_peers_connected_to_peer(self, peer_id: ID) -> Tuple[PeerInfo, ...]:
         """FIND_PEERS_CONNECTED_TO_PEER
         """
         dht_req = p2pd_pb.DHTRequest(
@@ -106,20 +107,20 @@ class DHTClient:
             )
         return pinfos
 
-    async def get_closest_peers(self, key: bytes) -> Tuple[PeerID, ...]:
+    async def get_closest_peers(self, key: bytes) -> Tuple[ID, ...]:
         """GET_CLOSEST_PEERS
         """
         dht_req = p2pd_pb.DHTRequest(type=p2pd_pb.DHTRequest.GET_CLOSEST_PEERS, key=key)
         resps = await self._do_dht(dht_req)
         try:
-            peer_ids = tuple(PeerID(dht_resp.value) for dht_resp in resps)
+            peer_ids = tuple(ID(dht_resp.value) for dht_resp in resps)
         except AttributeError as e:
             raise ControlFailure(
                 f"dht_resp should contains `value`: resps={resps}, e={e}"
             )
         return peer_ids
 
-    async def get_public_key(self, peer_id: PeerID) -> crypto_pb.PublicKey:
+    async def get_public_key(self, peer_id: ID) -> crypto_pb.PublicKey:
         """GET_PUBLIC_KEY
         """
         dht_req = p2pd_pb.DHTRequest(

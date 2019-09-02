@@ -1,11 +1,11 @@
 import asyncio
 from typing import Tuple
 
-from .datastructures import PeerID
-from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
-from .control import DaemonConnector
+from libp2p.peer.id import ID
 
+from .control import DaemonConnector
 from .pb import p2pd_pb2 as p2pd_pb
+from .utils import raise_if_failed, read_pbmsg_safe, write_pbmsg
 
 
 class PubSubClient:
@@ -29,7 +29,7 @@ class PubSubClient:
         topics = tuple(resp.pubsub.topics)
         return topics
 
-    async def list_peers(self, topic: str) -> Tuple[PeerID, ...]:
+    async def list_peers(self, topic: str) -> Tuple[ID, ...]:
         """PUBSUB LIST_PEERS
         """
         pubsub_req = p2pd_pb.PSRequest(type=p2pd_pb.PSRequest.LIST_PEERS, topic=topic)
@@ -41,7 +41,7 @@ class PubSubClient:
         writer.close()
         raise_if_failed(resp)
 
-        return tuple(PeerID(peer_id_bytes) for peer_id_bytes in resp.pubsub.peerIDs)
+        return tuple(ID(peer_id_bytes) for peer_id_bytes in resp.pubsub.peerIDs)
 
     async def publish(self, topic: str, data: bytes) -> None:
         """PUBSUB PUBLISH

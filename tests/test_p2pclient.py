@@ -1,19 +1,16 @@
 import asyncio
 import io
 
-import pytest
-
-from multiaddr import Multiaddr, protocols
-
 from google.protobuf.message import EncodeError
+from multiaddr import Multiaddr, protocols
+import pytest
 
 from p2pclient import config
 from p2pclient.control import parse_conn_protocol
-from p2pclient.p2pclient import DaemonConnector, ControlClient
-from p2pclient.utils import read_pbmsg_safe, write_pbmsg
-from p2pclient.serialization import write_unsigned_varint
-
+from p2pclient.p2pclient import ControlClient, DaemonConnector
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
+from p2pclient.serialization import write_unsigned_varint
+from p2pclient.utils import read_pbmsg_safe, write_pbmsg
 
 
 class MockReaderWriter(io.BytesIO):

@@ -73,5 +73,5 @@ workflows:
   test:
     jobs:
       - lint
-      - py36-test
+      # - py36-test  # Note: Drop 3.6 for now, to be compatible with py-libp2p
       - py37-test

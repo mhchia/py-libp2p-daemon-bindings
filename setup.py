@@ -12,8 +12,9 @@ deps = {
     "libp2p": [
         "base58>=1.0.3",
         "multiaddr>=0.0.8,<0.1.0",
-        "protobuf>=3.6.1",
+        "protobuf==3.9.0",
         "pymultihash>=0.8.2",
+        "libp2p @ git+https://git@github.com/mhchia/py-libp2p@dfd9ebd",
     ],
     "test": ["pytest", "pytest-asyncio", "pytest-cov"],
     "lint": ["flake8", "mypy", "black", "mypy-protobuf"],

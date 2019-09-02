@@ -3,7 +3,6 @@
 
 import setuptools
 
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -17,7 +16,7 @@ deps = {
         "libp2p @ git+https://git@github.com/mhchia/py-libp2p@dfd9ebd",
     ],
     "test": ["pytest", "pytest-asyncio", "pytest-cov"],
-    "lint": ["flake8", "mypy", "black", "mypy-protobuf"],
+    "lint": ["flake8", "mypy", "black", "mypy-protobuf", "isort"],
     "dev": ["tox"],
 }
 

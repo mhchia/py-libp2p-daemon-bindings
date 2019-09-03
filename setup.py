@@ -43,7 +43,7 @@ setuptools.setup(
         "multiaddr>=0.0.8,<0.1.0",
         "protobuf>=3.9.0",
         "pymultihash>=0.8.2",
-        "libp2p @ git+https://git@github.com/mhchia/py-libp2p@dfd9ebd",
+        "libp2p @ git+https://git@github.com/mhchia/py-libp2p@2ba7948",
     ],
     extras_require=extras_require,
     classifiers=[

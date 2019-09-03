@@ -7,14 +7,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
-deps = {
-    "libp2p": [
-        "base58>=1.0.3",
-        "multiaddr>=0.0.8,<0.1.0",
-        "protobuf>=3.9.0",
-        "pymultihash>=0.8.2",
-        "libp2p @ git+https://git@github.com/mhchia/py-libp2p@dfd9ebd",
-    ],
+extras_require = {
     "test": [
         "pytest>=4.6.3,<5.0.0",
         "pytest-asyncio>=0.10.0,<1.0.0",
@@ -30,9 +23,9 @@ deps = {
     "dev": ["tox>=3.13.2,<4.0.0"],
 }
 
-deps["dev"] = deps["libp2p"] + deps["test"] + deps["lint"] + deps["dev"]
-
-install_requires = deps["libp2p"]
+extras_require["dev"] = (
+    extras_require["test"] + extras_require["lint"] + extras_require["dev"]
+)
 
 
 setuptools.setup(
@@ -45,8 +38,14 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mhchia/py-libp2p-daemon-bindings",
     packages=setuptools.find_packages(exclude=["tests", "tests.*"]),
-    install_requires=install_requires,
-    extras_require=deps,
+    install_requires=[
+        "base58>=1.0.3",
+        "multiaddr>=0.0.8,<0.1.0",
+        "protobuf>=3.9.0",
+        "pymultihash>=0.8.2",
+        "libp2p @ git+https://git@github.com/mhchia/py-libp2p@dfd9ebd",
+    ],
+    extras_require=extras_require,
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",

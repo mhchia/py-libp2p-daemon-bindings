@@ -23,7 +23,7 @@ class ConnectionManagerClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
         reader, writer = await self.daemon_connector.open_connection()
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         writer.close()
         raise_if_failed(resp)
@@ -37,7 +37,7 @@ class ConnectionManagerClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
         reader, writer = await self.daemon_connector.open_connection()
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         writer.close()
         raise_if_failed(resp)
@@ -49,7 +49,7 @@ class ConnectionManagerClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
         reader, writer = await self.daemon_connector.open_connection()
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         writer.close()
         raise_if_failed(resp)

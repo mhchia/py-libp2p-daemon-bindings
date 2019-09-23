@@ -22,7 +22,7 @@ class DHTClient:
         reader: asyncio.StreamReader
     ) -> AsyncGenerator[p2pd_pb.DHTResponse, None]:
         while True:
-            dht_resp = p2pd_pb.DHTResponse()
+            dht_resp = p2pd_pb.DHTResponse()  # type: ignore
             await read_pbmsg_safe(reader, dht_resp)
             if dht_resp.type == dht_resp.END:
                 break
@@ -34,7 +34,7 @@ class DHTClient:
         reader, writer = await self.daemon_connector.open_connection()
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         raise_if_failed(resp)
 
@@ -176,7 +176,7 @@ class DHTClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
         reader, writer = await self.daemon_connector.open_connection()
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         writer.close()
         raise_if_failed(resp)
@@ -188,7 +188,7 @@ class DHTClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
         reader, writer = await self.daemon_connector.open_connection()
         await write_pbmsg(writer, req)
-        resp = p2pd_pb.Response()
+        resp = p2pd_pb.Response()  # type: ignore
         await read_pbmsg_safe(reader, resp)
         writer.close()
         raise_if_failed(resp)

@@ -805,15 +805,15 @@ async def test_client_pubsub_subscribe(p2pcs):
     pubsub_msg_1_another = p2pd_pb.PSMessage()
     await read_pbmsg_safe(reader_1_another, pubsub_msg_1_another)
     assert pubsub_msg_1_another.data == another_data_0
-    # test case: test `from_field`
-    assert ID(pubsub_msg_1_1.from_field) == peer_id_0
-    # test case: test `from_field`, when it is sent through 1 hop(p2pcs[1])
+    # test case: test `from_id`
+    assert ID(pubsub_msg_1_1.from_id) == peer_id_0
+    # test case: test `from_id`, when it is sent through 1 hop(p2pcs[1])
     reader_2, _ = await p2pcs[2].pubsub_subscribe(topic)
     another_data_2 = b"another_data_2"
     await p2pcs[0].pubsub_publish(topic, another_data_2)
     pubsub_msg_2_0 = p2pd_pb.PSMessage()
     await read_pbmsg_safe(reader_2, pubsub_msg_2_0)
-    assert ID(pubsub_msg_2_0.from_field) == peer_id_0
+    assert ID(pubsub_msg_2_0.from_id) == peer_id_0
     # test case: unsubscribe by closing the stream
     writer_0.close()
     await asyncio.sleep(0)

@@ -130,7 +130,6 @@ class DHTClient:
         if len(resps) != 1:
             raise ControlFailure(f"should only get one response, resps={resps}")
         try:
-            # TODO: parse the public key with another class?
             public_key_pb_bytes = resps[0].value
         except AttributeError as e:
             raise ControlFailure(

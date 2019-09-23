@@ -32,7 +32,7 @@ def parse_conn_protocol(maddr: Multiaddr) -> int:
         )
         raise ValueError(
             f"connection protocol should be only one protocol out of {supported_protos}"
-            ", maddr={maddr}"
+            f", maddr={maddr}"
         )
     return tuple(proto_cand)[0]
 

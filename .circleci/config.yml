@@ -94,13 +94,13 @@ workflows:
   test_and_deploy:
     jobs:
       - lint:
-        filters:
-          tags:
-            only: /.*/
+          filters:
+            tags:
+              only: /.*/
       - py37-test:
-        filters:
-          tags:
-            only: /.*/
+          filters:
+            tags:
+              only: /.*/
       - deploy:
           requires:
             - lint

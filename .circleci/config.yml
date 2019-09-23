@@ -93,8 +93,14 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - lint
-      - py37-test
+      - lint:
+        filters:
+          tags:
+            only: /.*/
+      - py37-test:
+        filters:
+          tags:
+            only: /.*/
       - deploy:
           requires:
             - lint

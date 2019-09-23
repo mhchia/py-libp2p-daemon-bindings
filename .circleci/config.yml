@@ -55,23 +55,52 @@ jobs:
             - ~/.cache/pip
             - ~/.local
           key: cache-v0-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
-  py36-test:
-    docker:
-      - image: circleci/python:3.6
-        environment:
-          TOXENV: py36
-    <<: *p2pd_steps
   py37-test:
     docker:
       - image: circleci/python:3.7
         environment:
           TOXENV: py37
     <<: *p2pd_steps
+  deploy:  # Ref: https://circleci.com/blog/continuously-deploying-python-packages-to-pypi-with-circleci/
+    docker:
+      - image: circleci/python:3.7
+      - steps:
+        - checkout
+        # TODO: Verify if the tag matches the version in `setup.py`.
+        - run:
+            name: init .pypirc
+            command: |
+              echo -e "[pypi]" >> ~/.pypirc
+              echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+              echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+        - run:
+            name: create packages
+            command: make package
+        - run:
+            name: install twine
+            command: pip install --user twine
+        - run:
+            name: upload to pypi
+            command: twine upload dist/* --verbose
+        - run:
+            name: pip install from PyPI
+            command: |
+              pip install --user p2pclient
+              # TODO: Verify if the version matches the tag.
+
 
 workflows:
   version: 2
-  test:
+  test_and_deploy:
     jobs:
       - lint
-      # - py36-test  # Note: Drop 3.6 for now, to be compatible with py-libp2p
       - py37-test
+      - deploy:
+          requires:
+            - lint
+            - py37-test
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/

@@ -10,7 +10,9 @@ from google.protobuf.internal.containers import (
     RepeatedScalarFieldContainer as google___protobuf___internal___containers___RepeatedScalarFieldContainer,
 )
 
-from google.protobuf.message import Message as google___protobuf___message___Message
+from google.protobuf.message import (
+    Message as google___protobuf___message___Message,
+)
 
 from typing import (
     Iterable as typing___Iterable,
@@ -21,7 +23,10 @@ from typing import (
     cast as typing___cast,
 )
 
-from typing_extensions import Literal as typing_extensions___Literal
+from typing_extensions import (
+    Literal as typing_extensions___Literal,
+)
+
 
 class Request(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -56,107 +61,50 @@ class Request(google___protobuf___message___Message):
     DISCONNECT = typing___cast(Request.Type, 7)
     PUBSUB = typing___cast(Request.Type, 8)
 
-    type = ...  # type: Request.Type
+    type = ... # type: Request.Type
+
     @property
     def connect(self) -> ConnectRequest: ...
+
     @property
     def streamOpen(self) -> StreamOpenRequest: ...
+
     @property
     def streamHandler(self) -> StreamHandlerRequest: ...
+
     @property
     def dht(self) -> DHTRequest: ...
+
     @property
     def connManager(self) -> ConnManagerRequest: ...
+
     @property
     def disconnect(self) -> DisconnectRequest: ...
+
     @property
     def pubsub(self) -> PSRequest: ...
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
-        type: Request.Type,
-        connect: typing___Optional[ConnectRequest] = None,
-        streamOpen: typing___Optional[StreamOpenRequest] = None,
-        streamHandler: typing___Optional[StreamHandlerRequest] = None,
-        dht: typing___Optional[DHTRequest] = None,
-        connManager: typing___Optional[ConnManagerRequest] = None,
-        disconnect: typing___Optional[DisconnectRequest] = None,
-        pubsub: typing___Optional[PSRequest] = None,
-    ) -> None: ...
+        type : Request.Type,
+        connect : typing___Optional[ConnectRequest] = None,
+        streamOpen : typing___Optional[StreamOpenRequest] = None,
+        streamHandler : typing___Optional[StreamHandlerRequest] = None,
+        dht : typing___Optional[DHTRequest] = None,
+        connManager : typing___Optional[ConnManagerRequest] = None,
+        disconnect : typing___Optional[DisconnectRequest] = None,
+        pubsub : typing___Optional[PSRequest] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> Request: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "connManager",
-                "connect",
-                "dht",
-                "disconnect",
-                "pubsub",
-                "streamHandler",
-                "streamOpen",
-                "type",
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "connManager",
-                "connect",
-                "dht",
-                "disconnect",
-                "pubsub",
-                "streamHandler",
-                "streamOpen",
-                "type",
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"connManager",u"connect",u"dht",u"disconnect",u"pubsub",u"streamHandler",u"streamOpen",u"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"connManager",u"connect",u"dht",u"disconnect",u"pubsub",u"streamHandler",u"streamOpen",u"type"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "connManager",
-                b"connManager",
-                "connect",
-                b"connect",
-                "dht",
-                b"dht",
-                "disconnect",
-                b"disconnect",
-                "pubsub",
-                b"pubsub",
-                "streamHandler",
-                b"streamHandler",
-                "streamOpen",
-                b"streamOpen",
-                "type",
-                b"type",
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "connManager",
-                b"connManager",
-                "connect",
-                b"connect",
-                "dht",
-                b"dht",
-                "disconnect",
-                b"disconnect",
-                "pubsub",
-                b"pubsub",
-                "streamHandler",
-                b"streamHandler",
-                "streamOpen",
-                b"streamOpen",
-                "type",
-                b"type",
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"connManager",b"connManager",u"connect",b"connect",u"dht",b"dht",u"disconnect",b"disconnect",u"pubsub",b"pubsub",u"streamHandler",b"streamHandler",u"streamOpen",b"streamOpen",u"type",b"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"connManager",b"connManager",u"connect",b"connect",u"dht",b"dht",u"disconnect",b"disconnect",u"pubsub",b"pubsub",u"streamHandler",b"streamHandler",u"streamOpen",b"streamOpen",u"type",b"type"]) -> None: ...
 
 class Response(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -177,275 +125,176 @@ class Response(google___protobuf___message___Message):
     OK = typing___cast(Response.Type, 0)
     ERROR = typing___cast(Response.Type, 1)
 
-    type = ...  # type: Response.Type
+    type = ... # type: Response.Type
+
     @property
     def error(self) -> ErrorResponse: ...
+
     @property
     def streamInfo(self) -> StreamInfo: ...
+
     @property
     def identify(self) -> IdentifyResponse: ...
+
     @property
     def dht(self) -> DHTResponse: ...
+
     @property
-    def peers(
-        self
-    ) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[
-        PeerInfo
-    ]: ...
+    def peers(self) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[PeerInfo]: ...
+
     @property
     def pubsub(self) -> PSResponse: ...
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
-        type: Response.Type,
-        error: typing___Optional[ErrorResponse] = None,
-        streamInfo: typing___Optional[StreamInfo] = None,
-        identify: typing___Optional[IdentifyResponse] = None,
-        dht: typing___Optional[DHTResponse] = None,
-        peers: typing___Optional[typing___Iterable[PeerInfo]] = None,
-        pubsub: typing___Optional[PSResponse] = None,
-    ) -> None: ...
+        type : Response.Type,
+        error : typing___Optional[ErrorResponse] = None,
+        streamInfo : typing___Optional[StreamInfo] = None,
+        identify : typing___Optional[IdentifyResponse] = None,
+        dht : typing___Optional[DHTResponse] = None,
+        peers : typing___Optional[typing___Iterable[PeerInfo]] = None,
+        pubsub : typing___Optional[PSResponse] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> Response: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "dht", "error", "identify", "pubsub", "streamInfo", "type"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "dht", "error", "identify", "peers", "pubsub", "streamInfo", "type"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"dht",u"error",u"identify",u"pubsub",u"streamInfo",u"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"dht",u"error",u"identify",u"peers",u"pubsub",u"streamInfo",u"type"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "dht",
-                b"dht",
-                "error",
-                b"error",
-                "identify",
-                b"identify",
-                "pubsub",
-                b"pubsub",
-                "streamInfo",
-                b"streamInfo",
-                "type",
-                b"type",
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "dht",
-                b"dht",
-                "error",
-                b"error",
-                "identify",
-                b"identify",
-                "peers",
-                b"peers",
-                "pubsub",
-                b"pubsub",
-                "streamInfo",
-                b"streamInfo",
-                "type",
-                b"type",
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"dht",b"dht",u"error",b"error",u"identify",b"identify",u"pubsub",b"pubsub",u"streamInfo",b"streamInfo",u"type",b"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"dht",b"dht",u"error",b"error",u"identify",b"identify",u"peers",b"peers",u"pubsub",b"pubsub",u"streamInfo",b"streamInfo",u"type",b"type"]) -> None: ...
 
 class IdentifyResponse(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    id = ...  # type: bytes
-    addrs = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
-    def __init__(
-        self, *, id: bytes, addrs: typing___Optional[typing___Iterable[bytes]] = None
-    ) -> None: ...
+    id = ... # type: bytes
+    addrs = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
+
+    def __init__(self,
+        *,
+        id : bytes,
+        addrs : typing___Optional[typing___Iterable[bytes]] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> IdentifyResponse: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal["id"]) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["addrs", "id"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"id"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",u"id"]) -> None: ...
     else:
-        def HasField(
-            self, field_name: typing_extensions___Literal["id", b"id"]
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal["addrs", b"addrs", "id", b"id"],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"id",b"id"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",b"addrs",u"id",b"id"]) -> None: ...
 
 class ConnectRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    peer = ...  # type: bytes
-    addrs = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
-    timeout = ...  # type: int
-    def __init__(
-        self,
+    peer = ... # type: bytes
+    addrs = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
+    timeout = ... # type: int
+
+    def __init__(self,
         *,
-        peer: bytes,
-        addrs: typing___Optional[typing___Iterable[bytes]] = None,
-        timeout: typing___Optional[int] = None,
-    ) -> None: ...
+        peer : bytes,
+        addrs : typing___Optional[typing___Iterable[bytes]] = None,
+        timeout : typing___Optional[int] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> ConnectRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self, field_name: typing_extensions___Literal["peer", "timeout"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["addrs", "peer", "timeout"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",u"timeout"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",u"peer",u"timeout"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "timeout", b"timeout"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "addrs", b"addrs", "peer", b"peer", "timeout", b"timeout"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"timeout",b"timeout"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",b"addrs",u"peer",b"peer",u"timeout",b"timeout"]) -> None: ...
 
 class StreamOpenRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    peer = ...  # type: bytes
-    proto = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
-    timeout = ...  # type: int
-    def __init__(
-        self,
+    peer = ... # type: bytes
+    proto = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
+    timeout = ... # type: int
+
+    def __init__(self,
         *,
-        peer: bytes,
-        proto: typing___Optional[typing___Iterable[typing___Text]] = None,
-        timeout: typing___Optional[int] = None,
-    ) -> None: ...
+        peer : bytes,
+        proto : typing___Optional[typing___Iterable[typing___Text]] = None,
+        timeout : typing___Optional[int] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> StreamOpenRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self, field_name: typing_extensions___Literal["peer", "timeout"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["peer", "proto", "timeout"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",u"timeout"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",u"proto",u"timeout"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "timeout", b"timeout"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "proto", b"proto", "timeout", b"timeout"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"timeout",b"timeout"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"proto",b"proto",u"timeout",b"timeout"]) -> None: ...
 
 class StreamHandlerRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    addr = ...  # type: bytes
-    proto = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
-    def __init__(
-        self,
+    addr = ... # type: bytes
+    proto = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
+
+    def __init__(self,
         *,
-        addr: bytes,
-        proto: typing___Optional[typing___Iterable[typing___Text]] = None,
-    ) -> None: ...
+        addr : bytes,
+        proto : typing___Optional[typing___Iterable[typing___Text]] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> StreamHandlerRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal["addr"]) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["addr", "proto"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"addr"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addr",u"proto"]) -> None: ...
     else:
-        def HasField(
-            self, field_name: typing_extensions___Literal["addr", b"addr"]
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal["addr", b"addr", "proto", b"proto"],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"addr",b"addr"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addr",b"addr",u"proto",b"proto"]) -> None: ...
 
 class ErrorResponse(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    msg = ...  # type: typing___Text
-    def __init__(self, *, msg: typing___Text) -> None: ...
+    msg = ... # type: typing___Text
+
+    def __init__(self,
+        *,
+        msg : typing___Text,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> ErrorResponse: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal["msg"]) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["msg"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"msg"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"msg"]) -> None: ...
     else:
-        def HasField(
-            self, field_name: typing_extensions___Literal["msg", b"msg"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["msg", b"msg"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"msg",b"msg"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"msg",b"msg"]) -> None: ...
 
 class StreamInfo(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    peer = ...  # type: bytes
-    addr = ...  # type: bytes
-    proto = ...  # type: typing___Text
-    def __init__(self, *, peer: bytes, addr: bytes, proto: typing___Text) -> None: ...
+    peer = ... # type: bytes
+    addr = ... # type: bytes
+    proto = ... # type: typing___Text
+
+    def __init__(self,
+        *,
+        peer : bytes,
+        addr : bytes,
+        proto : typing___Text,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> StreamInfo: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self, field_name: typing_extensions___Literal["addr", "peer", "proto"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["addr", "peer", "proto"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"addr",u"peer",u"proto"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addr",u"peer",u"proto"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "addr", b"addr", "peer", b"peer", "proto", b"proto"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "addr", b"addr", "peer", b"peer", "proto", b"proto"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"addr",b"addr",u"peer",b"peer",u"proto",b"proto"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addr",b"addr",u"peer",b"peer",u"proto",b"proto"]) -> None: ...
 
 class DHTRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -480,80 +329,34 @@ class DHTRequest(google___protobuf___message___Message):
     PUT_VALUE = typing___cast(DHTRequest.Type, 7)
     PROVIDE = typing___cast(DHTRequest.Type, 8)
 
-    type = ...  # type: DHTRequest.Type
-    peer = ...  # type: bytes
-    cid = ...  # type: bytes
-    key = ...  # type: bytes
-    value = ...  # type: bytes
-    count = ...  # type: int
-    timeout = ...  # type: int
-    def __init__(
-        self,
+    type = ... # type: DHTRequest.Type
+    peer = ... # type: bytes
+    cid = ... # type: bytes
+    key = ... # type: bytes
+    value = ... # type: bytes
+    count = ... # type: int
+    timeout = ... # type: int
+
+    def __init__(self,
         *,
-        type: DHTRequest.Type,
-        peer: typing___Optional[bytes] = None,
-        cid: typing___Optional[bytes] = None,
-        key: typing___Optional[bytes] = None,
-        value: typing___Optional[bytes] = None,
-        count: typing___Optional[int] = None,
-        timeout: typing___Optional[int] = None,
-    ) -> None: ...
+        type : DHTRequest.Type,
+        peer : typing___Optional[bytes] = None,
+        cid : typing___Optional[bytes] = None,
+        key : typing___Optional[bytes] = None,
+        value : typing___Optional[bytes] = None,
+        count : typing___Optional[int] = None,
+        timeout : typing___Optional[int] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> DHTRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "cid", "count", "key", "peer", "timeout", "type", "value"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "cid", "count", "key", "peer", "timeout", "type", "value"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"cid",u"count",u"key",u"peer",u"timeout",u"type",u"value"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"cid",u"count",u"key",u"peer",u"timeout",u"type",u"value"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "cid",
-                b"cid",
-                "count",
-                b"count",
-                "key",
-                b"key",
-                "peer",
-                b"peer",
-                "timeout",
-                b"timeout",
-                "type",
-                b"type",
-                "value",
-                b"value",
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "cid",
-                b"cid",
-                "count",
-                b"count",
-                "key",
-                b"key",
-                "peer",
-                b"peer",
-                "timeout",
-                b"timeout",
-                "type",
-                b"type",
-                "value",
-                b"value",
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"cid",b"cid",u"count",b"count",u"key",b"key",u"peer",b"peer",u"timeout",b"timeout",u"type",b"type",u"value",b"value"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"cid",b"cid",u"count",b"count",u"key",b"key",u"peer",b"peer",u"timeout",b"timeout",u"type",b"type",u"value",b"value"]) -> None: ...
 
 class DHTResponse(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -576,68 +379,49 @@ class DHTResponse(google___protobuf___message___Message):
     VALUE = typing___cast(DHTResponse.Type, 1)
     END = typing___cast(DHTResponse.Type, 2)
 
-    type = ...  # type: DHTResponse.Type
-    value = ...  # type: bytes
+    type = ... # type: DHTResponse.Type
+    value = ... # type: bytes
+
     @property
     def peer(self) -> PeerInfo: ...
-    def __init__(
-        self,
+
+    def __init__(self,
         *,
-        type: DHTResponse.Type,
-        peer: typing___Optional[PeerInfo] = None,
-        value: typing___Optional[bytes] = None,
-    ) -> None: ...
+        type : DHTResponse.Type,
+        peer : typing___Optional[PeerInfo] = None,
+        value : typing___Optional[bytes] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> DHTResponse: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self, field_name: typing_extensions___Literal["peer", "type", "value"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["peer", "type", "value"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",u"type",u"value"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",u"type",u"value"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "type", b"type", "value", b"value"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "type", b"type", "value", b"value"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"type",b"type",u"value",b"value"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"type",b"type",u"value",b"value"]) -> None: ...
 
 class PeerInfo(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    id = ...  # type: bytes
-    addrs = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
-    def __init__(
-        self, *, id: bytes, addrs: typing___Optional[typing___Iterable[bytes]] = None
-    ) -> None: ...
+    id = ... # type: bytes
+    addrs = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
+
+    def __init__(self,
+        *,
+        id : bytes,
+        addrs : typing___Optional[typing___Iterable[bytes]] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> PeerInfo: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal["id"]) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["addrs", "id"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"id"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",u"id"]) -> None: ...
     else:
-        def HasField(
-            self, field_name: typing_extensions___Literal["id", b"id"]
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal["addrs", b"addrs", "id", b"id"],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"id",b"id"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"addrs",b"addrs",u"id",b"id"]) -> None: ...
 
 class ConnManagerRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -652,9 +436,7 @@ class ConnManagerRequest(google___protobuf___message___Message):
         @classmethod
         def values(cls) -> typing___List[ConnManagerRequest.Type]: ...
         @classmethod
-        def items(
-            cls
-        ) -> typing___List[typing___Tuple[str, ConnManagerRequest.Type]]: ...
+        def items(cls) -> typing___List[typing___Tuple[str, ConnManagerRequest.Type]]: ...
         TAG_PEER = typing___cast(ConnManagerRequest.Type, 0)
         UNTAG_PEER = typing___cast(ConnManagerRequest.Type, 1)
         TRIM = typing___cast(ConnManagerRequest.Type, 2)
@@ -662,65 +444,47 @@ class ConnManagerRequest(google___protobuf___message___Message):
     UNTAG_PEER = typing___cast(ConnManagerRequest.Type, 1)
     TRIM = typing___cast(ConnManagerRequest.Type, 2)
 
-    type = ...  # type: ConnManagerRequest.Type
-    peer = ...  # type: bytes
-    tag = ...  # type: typing___Text
-    weight = ...  # type: int
-    def __init__(
-        self,
+    type = ... # type: ConnManagerRequest.Type
+    peer = ... # type: bytes
+    tag = ... # type: typing___Text
+    weight = ... # type: int
+
+    def __init__(self,
         *,
-        type: ConnManagerRequest.Type,
-        peer: typing___Optional[bytes] = None,
-        tag: typing___Optional[typing___Text] = None,
-        weight: typing___Optional[int] = None,
-    ) -> None: ...
+        type : ConnManagerRequest.Type,
+        peer : typing___Optional[bytes] = None,
+        tag : typing___Optional[typing___Text] = None,
+        weight : typing___Optional[int] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> ConnManagerRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal["peer", "tag", "type", "weight"],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal["peer", "tag", "type", "weight"],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",u"tag",u"type",u"weight"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",u"tag",u"type",u"weight"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "tag", b"tag", "type", b"type", "weight", b"weight"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peer", b"peer", "tag", b"tag", "type", b"type", "weight", b"weight"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"tag",b"tag",u"type",b"type",u"weight",b"weight"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",b"peer",u"tag",b"tag",u"type",b"type",u"weight",b"weight"]) -> None: ...
 
 class DisconnectRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    peer = ...  # type: bytes
-    def __init__(self, *, peer: bytes) -> None: ...
+    peer = ... # type: bytes
+
+    def __init__(self,
+        *,
+        peer : bytes,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> DisconnectRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal["peer"]) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["peer"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer"]) -> None: ...
     else:
-        def HasField(
-            self, field_name: typing_extensions___Literal["peer", b"peer"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["peer", b"peer"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"peer",b"peer"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peer",b"peer"]) -> None: ...
 
 class PSRequest(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -745,136 +509,71 @@ class PSRequest(google___protobuf___message___Message):
     PUBLISH = typing___cast(PSRequest.Type, 2)
     SUBSCRIBE = typing___cast(PSRequest.Type, 3)
 
-    type = ...  # type: PSRequest.Type
-    topic = ...  # type: typing___Text
-    data = ...  # type: bytes
-    def __init__(
-        self,
+    type = ... # type: PSRequest.Type
+    topic = ... # type: typing___Text
+    data = ... # type: bytes
+
+    def __init__(self,
         *,
-        type: PSRequest.Type,
-        topic: typing___Optional[typing___Text] = None,
-        data: typing___Optional[bytes] = None,
-    ) -> None: ...
+        type : PSRequest.Type,
+        topic : typing___Optional[typing___Text] = None,
+        data : typing___Optional[bytes] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> PSRequest: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self, field_name: typing_extensions___Literal["data", "topic", "type"]
-        ) -> bool: ...
-        def ClearField(
-            self, field_name: typing_extensions___Literal["data", "topic", "type"]
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"data",u"topic",u"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"data",u"topic",u"type"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data", b"data", "topic", b"topic", "type", b"type"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data", b"data", "topic", b"topic", "type", b"type"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"data",b"data",u"topic",b"topic",u"type",b"type"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"data",b"data",u"topic",b"topic",u"type",b"type"]) -> None: ...
 
 class PSMessage(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    data = ...  # type: bytes
-    seqno = ...  # type: bytes
-    topicIDs = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
-    signature = ...  # type: bytes
-    key = ...  # type: bytes
-    def __init__(
-        self,
+    from_id = ... # type: bytes
+    data = ... # type: bytes
+    seqno = ... # type: bytes
+    topicIDs = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
+    signature = ... # type: bytes
+    key = ... # type: bytes
+
+    def __init__(self,
         *,
-        data: typing___Optional[bytes] = None,
-        seqno: typing___Optional[bytes] = None,
-        topicIDs: typing___Optional[typing___Iterable[typing___Text]] = None,
-        signature: typing___Optional[bytes] = None,
-        key: typing___Optional[bytes] = None,
-    ) -> None: ...
+        from_id : typing___Optional[bytes] = None,
+        data : typing___Optional[bytes] = None,
+        seqno : typing___Optional[bytes] = None,
+        topicIDs : typing___Optional[typing___Iterable[typing___Text]] = None,
+        signature : typing___Optional[bytes] = None,
+        key : typing___Optional[bytes] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> PSMessage: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data", "from", "key", "seqno", "signature"
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data", "from", "key", "seqno", "signature", "topicIDs"
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"data",u"from_id",u"key",u"seqno",u"signature"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"data",u"from_id",u"key",u"seqno",u"signature",u"topicIDs"]) -> None: ...
     else:
-        def HasField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data",
-                b"data",
-                "from",
-                b"from",
-                "key",
-                b"key",
-                "seqno",
-                b"seqno",
-                "signature",
-                b"signature",
-            ],
-        ) -> bool: ...
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "data",
-                b"data",
-                "from",
-                b"from",
-                "key",
-                b"key",
-                "seqno",
-                b"seqno",
-                "signature",
-                b"signature",
-                "topicIDs",
-                b"topicIDs",
-            ],
-        ) -> None: ...
+        def HasField(self, field_name: typing_extensions___Literal[u"data",b"data",u"from_id",b"from_id",u"key",b"key",u"seqno",b"seqno",u"signature",b"signature"]) -> bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"data",b"data",u"from_id",b"from_id",u"key",b"key",u"seqno",b"seqno",u"signature",b"signature",u"topicIDs",b"topicIDs"]) -> None: ...
 
 class PSResponse(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    topics = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
-    peerIDs = (
-        ...
-    )  # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
-    def __init__(
-        self,
+    topics = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
+    peerIDs = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[bytes]
+
+    def __init__(self,
         *,
-        topics: typing___Optional[typing___Iterable[typing___Text]] = None,
-        peerIDs: typing___Optional[typing___Iterable[bytes]] = None,
-    ) -> None: ...
+        topics : typing___Optional[typing___Iterable[typing___Text]] = None,
+        peerIDs : typing___Optional[typing___Iterable[bytes]] = None,
+        ) -> None: ...
     @classmethod
     def FromString(cls, s: bytes) -> PSResponse: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
-        def ClearField(
-            self, field_name: typing_extensions___Literal["peerIDs", "topics"]
-        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peerIDs",u"topics"]) -> None: ...
     else:
-        def ClearField(
-            self,
-            field_name: typing_extensions___Literal[
-                "peerIDs", b"peerIDs", "topics", b"topics"
-            ],
-        ) -> None: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"peerIDs",b"peerIDs",u"topics",b"topics"]) -> None: ...

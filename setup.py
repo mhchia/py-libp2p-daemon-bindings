@@ -20,7 +20,7 @@ extras_require = {
         "isort>=4.3.21",
         "flake8>=3.7.7,<4.0.0",
     ],
-    "dev": ["tox>=3.13.2,<4.0.0"],
+    "dev": ["tox>=3.13.2,<4.0.0", "wheel"],
 }
 
 extras_require["dev"] = (
@@ -30,7 +30,7 @@ extras_require["dev"] = (
 
 setuptools.setup(
     name="p2pclient",
-    version="0.0.1",
+    version="0.1.0",
     author="Kevin Mai-Hsuan Chia",
     author_email="kevin.mh.chia@gmail.com",
     description="The libp2p daemon bindings for Python",

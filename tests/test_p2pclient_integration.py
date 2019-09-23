@@ -15,7 +15,7 @@ from p2pclient.p2pclient import Client
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
 from p2pclient.utils import read_pbmsg_safe
 
-TIMEOUT_DURATION = 120  # seconds
+TIMEOUT_DURATION = 30  # seconds
 
 
 @pytest.fixture
@@ -46,6 +46,11 @@ def enable_dht():
 @pytest.fixture
 def enable_pubsub():
     return False
+
+
+@pytest.fixture
+def func_make_p2pd_pair():
+    return make_p2pd_pair_ip4
 
 
 async def try_until_success(coro_func, timeout=TIMEOUT_DURATION):
@@ -198,7 +203,7 @@ async def _make_p2pd_pair(
     return DaemonTuple(daemon=p2pd, client=client)
 
 
-@pytest.fixture(params=[make_p2pd_pair_ip4, make_p2pd_pair_unix])
+@pytest.fixture
 async def p2pcs(
     num_p2pds,
     request,
@@ -206,31 +211,32 @@ async def p2pcs(
     enable_connmgr,
     enable_dht,
     enable_pubsub,
+    func_make_p2pd_pair,
     unused_tcp_port_factory,
 ):
-    make_p2pd_pair = request.param
-    pairs = tuple(
-        asyncio.ensure_future(
-            make_p2pd_pair(
+    p2pd_tuples = await asyncio.gather(
+        *[
+            func_make_p2pd_pair(
                 id_generator=unused_tcp_port_factory,
                 enable_control=enable_control,
                 enable_connmgr=enable_connmgr,
                 enable_dht=enable_dht,
                 enable_pubsub=enable_pubsub,
             )
-        )
-        for i in range(num_p2pds)
+            for _ in range(num_p2pds)
+        ]
     )
-    p2pd_tuples = await asyncio.gather(*pairs)
-    p2pcs = tuple(p2pd_tuple.client for p2pd_tuple in p2pd_tuples)
-    yield p2pcs
 
-    # clean up
-    for p2pd_tuple in p2pd_tuples:
-        if not p2pd_tuple.daemon.is_closed:
-            p2pd_tuple.daemon.close()
-        if p2pd_tuple.client.control.listener is not None:
-            await p2pd_tuple.client.close()
+    p2pcs = tuple(p2pd_tuple.client for p2pd_tuple in p2pd_tuples)
+    try:
+        yield p2pcs
+    finally:
+        # clean up
+        for p2pd_tuple in p2pd_tuples:
+            if not p2pd_tuple.daemon.is_closed:
+                p2pd_tuple.daemon.close()
+            if p2pd_tuple.client.control.listener is not None:
+                await p2pd_tuple.client.close()
 
 
 @pytest.mark.parametrize("enable_control", (True,))
@@ -258,6 +264,14 @@ async def test_client_close(p2pcs):
     assert listener.sockets is None or len(listener.sockets) == 0
     # test case: it's fine to listen again, after closing
     await p2pcs[0].listen()
+
+
+@pytest.mark.parametrize(
+    "enable_control, func_make_p2pd_pair", ((True, make_p2pd_pair_unix),)
+)
+@pytest.mark.asyncio
+async def test_client_identify_unix_socket(p2pcs):
+    await p2pcs[0].identify()
 
 
 @pytest.mark.parametrize("enable_control", (True,))
@@ -407,7 +421,7 @@ async def test_client_stream_open_failure(p2pcs):
 def _get_current_running_dispatched_handler():
     running_handlers = tuple(
         task
-        for task in asyncio.Task.all_tasks()
+        for task in asyncio.all_tasks()
         if (task._coro.__name__ == "_dispatcher") and (not task.done())
     )
     # assume there should only be exactly one dispatched handler

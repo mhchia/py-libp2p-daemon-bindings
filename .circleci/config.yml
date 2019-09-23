@@ -64,29 +64,29 @@ jobs:
   deploy:  # Ref: https://circleci.com/blog/continuously-deploying-python-packages-to-pypi-with-circleci/
     docker:
       - image: circleci/python:3.7
-      - steps:
-        - checkout
-        # TODO: Verify if the tag matches the version in `setup.py`.
-        - run:
-            name: init .pypirc
-            command: |
-              echo -e "[pypi]" >> ~/.pypirc
-              echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
-              echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
-        - run:
-            name: create packages
-            command: make package
-        - run:
-            name: install twine
-            command: pip install --user twine
-        - run:
-            name: upload to pypi
-            command: twine upload dist/* --verbose
-        - run:
-            name: pip install from PyPI
-            command: |
-              pip install --user p2pclient
-              # TODO: Verify if the version matches the tag.
+    steps:
+      - checkout
+      # TODO: Verify if the tag matches the version in `setup.py`.
+      - run:
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: create packages
+          command: make package
+      - run:
+          name: install twine
+          command: pip install --user twine
+      - run:
+          name: upload to pypi
+          command: twine upload dist/* --verbose
+      - run:
+          name: pip install from PyPI
+          command: |
+            pip install --user p2pclient
+            # TODO: Verify if the version matches the tag.
 
 
 workflows:

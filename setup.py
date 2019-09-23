@@ -30,7 +30,7 @@ extras_require["dev"] = (
 
 setuptools.setup(
     name="p2pclient",
-    version="0.1.0",
+    version="0.1.1",
     author="Kevin Mai-Hsuan Chia",
     author_email="kevin.mh.chia@gmail.com",
     description="The libp2p daemon bindings for Python",
@@ -50,7 +50,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3 :: Only",
     ],
 )

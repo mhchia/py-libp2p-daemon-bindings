@@ -21,6 +21,13 @@ protobufs: $(pys)
 %_pb2.py: %.proto
 	protoc --python_out=. --mypy_out=. $<
 
+
+package:
+	# create a source distribution
+	python setup.py sdist
+	# create a wheel
+	python setup.py bdist_wheel
+
 .PHONY: clean
 
 clean:

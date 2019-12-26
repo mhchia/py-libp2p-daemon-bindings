@@ -1,15 +1,10 @@
-import asyncio
-from io import BytesIO
-from typing import TypeVar
-
-Writer = TypeVar("Writer", BytesIO, asyncio.StreamWriter)
-
+import anyio
 
 DEFAULT_MAX_BITS: int = 64
 
 
-def write_unsigned_varint(
-    writer: Writer, integer: int, max_bits: int = DEFAULT_MAX_BITS
+async def write_unsigned_varint(
+    stream: anyio.abc.SocketStream, integer: int, max_bits: int = DEFAULT_MAX_BITS
 ) -> None:
     max_int: int = 1 << max_bits
     if integer < 0:
@@ -22,20 +17,20 @@ def write_unsigned_varint(
         if integer != 0:
             value |= 0x80
         byte = value.to_bytes(1, "big")
-        writer.write(byte)
+        await stream.send_all(byte)
         if integer == 0:
             break
 
 
 async def read_unsigned_varint(
-    reader: asyncio.StreamReader, max_bits: int = DEFAULT_MAX_BITS
+    stream: anyio.abc.SocketStream, max_bits: int = DEFAULT_MAX_BITS
 ) -> int:
     max_int: int = 1 << max_bits
     iteration: int = 0
     result: int = 0
     has_next: bool = True
     while has_next:
-        data = await reader.readexactly(1)
+        data = await stream.receive_exactly(1)
         c = data[0]
         value = c & 0x7F
         result |= value << (iteration * 7)

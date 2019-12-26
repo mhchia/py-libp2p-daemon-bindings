@@ -1,6 +1,6 @@
-import asyncio
 from typing import Tuple
 
+import anyio
 from libp2p.peer.id import ID
 
 from .control import DaemonConnector
@@ -19,11 +19,11 @@ class PubSubClient:
         """
         pubsub_req = p2pd_pb.PSRequest(type=p2pd_pb.PSRequest.GET_TOPICS)
         req = p2pd_pb.Request(type=p2pd_pb.Request.PUBSUB, pubsub=pubsub_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
         topics = tuple(resp.pubsub.topics)
@@ -34,11 +34,11 @@ class PubSubClient:
         """
         pubsub_req = p2pd_pb.PSRequest(type=p2pd_pb.PSRequest.LIST_PEERS, topic=topic)
         req = p2pd_pb.Request(type=p2pd_pb.Request.PUBSUB, pubsub=pubsub_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
         return tuple(ID(peer_id_bytes) for peer_id_bytes in resp.pubsub.peerIDs)
@@ -50,24 +50,22 @@ class PubSubClient:
             type=p2pd_pb.PSRequest.PUBLISH, topic=topic, data=data
         )
         req = p2pd_pb.Request(type=p2pd_pb.Request.PUBSUB, pubsub=pubsub_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
-    async def subscribe(
-        self, topic: str
-    ) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+    async def subscribe(self, topic: str) -> Tuple[anyio.abc.SocketStream]:
         """PUBSUB SUBSCRIBE
         """
         pubsub_req = p2pd_pb.PSRequest(type=p2pd_pb.PSRequest.SUBSCRIBE, topic=topic)
         req = p2pd_pb.Request(type=p2pd_pb.Request.PUBSUB, pubsub=pubsub_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
+        await read_pbmsg_safe(stream, resp)
         raise_if_failed(resp)
 
-        return reader, writer
+        return stream

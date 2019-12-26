@@ -21,11 +21,11 @@ class ConnectionManagerClient:
             weight=weight,
         )
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
     async def untag_peer(self, peer_id: ID, tag: str) -> None:
@@ -35,11 +35,11 @@ class ConnectionManagerClient:
             type=p2pd_pb.ConnManagerRequest.UNTAG_PEER, peer=peer_id.to_bytes(), tag=tag
         )
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
     async def trim(self) -> None:
@@ -47,9 +47,9 @@ class ConnectionManagerClient:
         """
         connmgr_req = p2pd_pb.ConnManagerRequest(type=p2pd_pb.ConnManagerRequest.TRIM)
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNMANAGER, connManager=connmgr_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)

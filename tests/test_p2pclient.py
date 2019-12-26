@@ -1,6 +1,6 @@
-import asyncio
 import io
 
+import anyio
 from google.protobuf.message import EncodeError
 from multiaddr import Multiaddr, protocols
 import pytest
@@ -14,12 +14,13 @@ from p2pclient.utils import read_pbmsg_safe, write_pbmsg
 
 
 class MockReaderWriter(io.BytesIO):
-    async def readexactly(self, n):
+    async def receive_exactly(self, n):
+        await anyio.sleep(0)
         return self.read(n)
 
-    async def drain(self):
-        # do nothing
-        pass
+    async def send_all(self, b):
+        await anyio.sleep(0)
+        return self.write(b)
 
 
 @pytest.mark.parametrize(
@@ -77,10 +78,10 @@ def test_control_client_ctor_default_listen_maddr():
     # give test cases ids to prevent bytes from ruining the terminal
     ids=("pb example Response 0", "pb example Response 1", "pb example Response 2"),
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_read_pbmsg_safe_valid(msg_bytes):
     s = MockReaderWriter()
-    write_unsigned_varint(s, len(msg_bytes))
+    await write_unsigned_varint(s, len(msg_bytes))
     s.write(msg_bytes)
     # reset the offset back to the beginning
     s.seek(0, 0)
@@ -89,34 +90,36 @@ async def test_read_pbmsg_safe_valid(msg_bytes):
     assert pb_msg.SerializeToString() == msg_bytes
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_read_pbmsg_safe_readexactly_fails():
     host = "127.0.0.1"
     port = 5566
 
-    event = asyncio.Event()
+    event = anyio.create_event()
 
-    async def handler_stream(reader, _):
-        pb_msg = p2pd_pb.Response()
-        try:
-            await read_pbmsg_safe(reader, pb_msg)
-        except asyncio.IncompleteReadError:
-            event.set()
+    async with anyio.create_task_group() as tg, await anyio.create_tcp_server(
+        port=port, interface=host
+    ) as server:
 
-    sock = await asyncio.start_server(handler_stream, host=host, port=port)
+        async def handler_stream(stream):
+            pb_msg = p2pd_pb.Response()
+            try:
+                await read_pbmsg_safe(stream, pb_msg)
+            except anyio.exceptions.IncompleteRead:
+                await event.set()
 
-    _, writer = await asyncio.open_connection(host=host, port=port)
-    # close the writer. Therefore the handler should receive EOF, and then `readexactly` raises.
-    writer.close()
+        async def server_serve():
+            async for client in server.accept_connections():
+                await tg.spawn(handler_stream, client)
 
-    try:
-        await asyncio.wait_for(event.wait(), timeout=5)
-    except asyncio.TimeoutError:
-        assert False, "timeout before `handler_stream` is called"
-    assert event.is_set()
+        await tg.spawn(server_serve)
 
-    sock.close()
-    await sock.wait_closed()
+        stream = await anyio.connect_tcp(address=host, port=port)
+        # close the stream. Therefore the handler should receive EOF, and then `readexactly` raises.
+        await stream.close()
+
+        async with anyio.fail_after(5):
+            await event.wait()
 
 
 @pytest.mark.parametrize(
@@ -148,7 +151,7 @@ async def test_read_pbmsg_safe_readexactly_fails():
         "pb example StreamInfo",
     ),
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_write_pbmsg(pb_msg, msg_bytes):
     s_read = MockReaderWriter(msg_bytes)
     await read_pbmsg_safe(s_read, pb_msg)
@@ -167,7 +170,7 @@ async def test_write_pbmsg(pb_msg, msg_bytes):
         p2pd_pb.StreamInfo(),
     ),
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_write_pbmsg_missing_fields(pb_msg):
     with pytest.raises(EncodeError):
         await write_pbmsg(MockReaderWriter(), pb_msg)

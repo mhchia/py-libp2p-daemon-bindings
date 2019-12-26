@@ -8,11 +8,7 @@ with open("README.md", "r") as fh:
 
 
 extras_require = {
-    "test": [
-        "pytest>=4.6.3,<5.0.0",
-        "pytest-asyncio>=0.10.0,<1.0.0",
-        "pytest-cov>=2.7.1,<3.0.0",
-    ],
+    "test": ["pytest>=4.6.3,<5.0.0", "pytest-cov>=2.7.1,<3.0.0"],
     "lint": [
         "mypy>=0.701,<1.0",
         "mypy-protobuf>=1.15",
@@ -44,6 +40,9 @@ setuptools.setup(
         "protobuf>=3.9.0",
         "pymultihash>=0.8.2",
         "libp2p>=0.1.1",
+        "anyio>=1.2.2,<2.0.0",
+        "async-generator>=1.10,<2.0",
+        "async-exit-stack>=1.0.1,<2.0.0",
     ],
     extras_require=extras_require,
     classifiers=[

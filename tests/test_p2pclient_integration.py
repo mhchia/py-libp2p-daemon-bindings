@@ -1,9 +1,9 @@
 import functools
 import os
-import random
 import subprocess
 import time
 from typing import NamedTuple
+import uuid
 
 import anyio
 from async_exit_stack import AsyncExitStack
@@ -16,7 +16,7 @@ import pytest
 from p2pclient.exceptions import ControlFailure
 from p2pclient.p2pclient import Client
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
-from p2pclient.utils import read_pbmsg_safe
+from p2pclient.utils import get_unused_tcp_port, read_pbmsg_safe
 
 TIMEOUT_DURATION = 30  # seconds
 
@@ -146,11 +146,11 @@ class ConnectionFailure(Exception):
 
 @asynccontextmanager
 async def make_p2pd_pair_unix(
-    id_generator, enable_control, enable_connmgr, enable_dht, enable_pubsub
+    enable_control, enable_connmgr, enable_dht, enable_pubsub
 ):
-    socket_id = id_generator()
-    control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{socket_id}.sock")
-    listen_maddr = Multiaddr(f"/unix/tmp/test_p2pd_listen_{socket_id}.sock")
+    name = str(uuid.uuid4())[:8]
+    control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{name}.sock")
+    listen_maddr = Multiaddr(f"/unix/tmp/test_p2pd_listen_{name}.sock")
     # Remove the existing unix socket files if they are existing
     try:
         os.unlink(control_maddr.value_for_protocol(protocols.P_UNIX))
@@ -172,11 +172,9 @@ async def make_p2pd_pair_unix(
 
 
 @asynccontextmanager
-async def make_p2pd_pair_ip4(
-    id_generator, enable_control, enable_connmgr, enable_dht, enable_pubsub
-):
-    control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{id_generator()}")
-    listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{id_generator()}")
+async def make_p2pd_pair_ip4(enable_control, enable_connmgr, enable_dht, enable_pubsub):
+    control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
+    listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     async with _make_p2pd_pair(
         control_maddr=control_maddr,
         listen_maddr=listen_maddr,
@@ -229,7 +227,6 @@ async def p2pcs(
         p2pd_tuples = [
             await stack.enter_async_context(
                 func_make_p2pd_pair(
-                    id_generator=lambda: random.randint(1024, 65535),
                     enable_control=enable_control,
                     enable_connmgr=enable_connmgr,
                     enable_dht=enable_dht,

@@ -1,6 +1,6 @@
-import asyncio
 from typing import AsyncGenerator, Tuple
 
+import anyio
 from libp2p.crypto.pb import crypto_pb2 as crypto_pb
 from libp2p.peer.id import ID
 
@@ -19,11 +19,11 @@ class DHTClient:
 
     @staticmethod
     async def _read_dht_stream(
-        reader: asyncio.StreamReader
+        stream: anyio.abc.SocketStream,
     ) -> AsyncGenerator[p2pd_pb.DHTResponse, None]:
         while True:
             dht_resp = p2pd_pb.DHTResponse()  # type: ignore
-            await read_pbmsg_safe(reader, dht_resp)
+            await read_pbmsg_safe(stream, dht_resp)
             if dht_resp.type == dht_resp.END:
                 break
             yield dht_resp
@@ -31,11 +31,11 @@ class DHTClient:
     async def _do_dht(
         self, dht_req: p2pd_pb.DHTRequest
     ) -> Tuple[p2pd_pb.DHTResponse, ...]:
-        reader, writer = await self.daemon_connector.open_connection()
+        stream = await self.daemon_connector.open_connection()
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
-        await write_pbmsg(writer, req)
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
+        await read_pbmsg_safe(stream, resp)
         raise_if_failed(resp)
 
         try:
@@ -49,8 +49,8 @@ class DHTClient:
         if dht_resp.type != dht_resp.BEGIN:
             raise ControlFailure(f"Type should be BEGIN instead of {dht_resp.type}")
         # BEGIN/END stream
-        resps = tuple([i async for i in self._read_dht_stream(reader)])
-        writer.close()
+        resps = tuple([i async for i in self._read_dht_stream(stream)])
+        await stream.close()
         return resps
 
     async def find_peer(self, peer_id: ID) -> PeerInfo:
@@ -174,11 +174,11 @@ class DHTClient:
             type=p2pd_pb.DHTRequest.PUT_VALUE, key=key, value=value
         )
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)
 
     async def provide(self, cid: bytes) -> None:
@@ -186,9 +186,9 @@ class DHTClient:
         """
         dht_req = p2pd_pb.DHTRequest(type=p2pd_pb.DHTRequest.PROVIDE, cid=cid)
         req = p2pd_pb.Request(type=p2pd_pb.Request.DHT, dht=dht_req)
-        reader, writer = await self.daemon_connector.open_connection()
-        await write_pbmsg(writer, req)
+        stream = await self.daemon_connector.open_connection()
+        await write_pbmsg(stream, req)
         resp = p2pd_pb.Response()  # type: ignore
-        await read_pbmsg_safe(reader, resp)
-        writer.close()
+        await read_pbmsg_safe(stream, resp)
+        await stream.close()
         raise_if_failed(resp)

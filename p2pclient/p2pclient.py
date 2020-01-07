@@ -1,6 +1,7 @@
-import asyncio
-from typing import Iterable, Sequence, Tuple
+from typing import AsyncIterator, Iterable, Sequence, Tuple
 
+import anyio
+from async_generator import asynccontextmanager
 from libp2p.crypto.pb import crypto_pb2 as crypto_pb
 from libp2p.peer.id import ID
 from multiaddr import Multiaddr
@@ -29,8 +30,10 @@ class Client:
         self.dht = DHTClient(daemon_connector=daemon_connector)
         self.pubsub = PubSubClient(daemon_connector=daemon_connector)
 
-    async def listen(self) -> None:
-        await self.control.listen()
+    @asynccontextmanager
+    async def listen(self) -> AsyncIterator["Client"]:
+        async with self.control.listen():
+            yield self
 
     async def close(self) -> None:
         await self.control.close()
@@ -49,7 +52,7 @@ class Client:
 
     async def stream_open(
         self, peer_id: ID, protocols: Sequence[str]
-    ) -> Tuple[StreamInfo, asyncio.StreamReader, asyncio.StreamWriter]:
+    ) -> Tuple[StreamInfo, anyio.abc.SocketStream]:
         return await self.control.stream_open(peer_id=peer_id, protocols=protocols)
 
     async def stream_handler(self, proto: str, handler_cb: StreamHandler) -> None:
@@ -106,7 +109,5 @@ class Client:
     async def pubsub_publish(self, topic: str, data: bytes) -> None:
         return await self.pubsub.publish(topic=topic, data=data)
 
-    async def pubsub_subscribe(
-        self, topic: str
-    ) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+    async def pubsub_subscribe(self, topic: str) -> anyio.abc.SocketStream:
         return await self.pubsub.subscribe(topic=topic)

@@ -109,5 +109,5 @@ class Client:
     async def pubsub_publish(self, topic: str, data: bytes) -> None:
         return await self.pubsub.publish(topic=topic, data=data)
 
-    async def pubsub_subscribe(self, topic: str) -> Tuple[anyio.abc.SocketStream]:
+    async def pubsub_subscribe(self, topic: str) -> anyio.abc.SocketStream:
         return await self.pubsub.subscribe(topic=topic)

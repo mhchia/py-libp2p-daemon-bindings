@@ -86,7 +86,7 @@ class ControlClient:
         async for client in server.accept_connections():
             await self.task_group.spawn(self._dispatcher, client)
 
-    async def _dispatcher(self, stream: anyio.abc.Stream) -> None:
+    async def _dispatcher(self, stream: anyio.abc.SocketStream) -> None:
         pb_stream_info = p2pd_pb.StreamInfo()  # type: ignore
         await read_pbmsg_safe(stream, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)

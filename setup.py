@@ -10,8 +10,8 @@ with open("README.md", "r") as fh:
 extras_require = {
     "test": ["pytest>=4.6.3,<5.0.0", "pytest-cov>=2.7.1,<3.0.0"],
     "lint": [
-        "mypy>=0.701,<1.0",
-        "mypy-protobuf>=1.15",
+        "mypy>=0.761,<1.0",
+        "mypy-protobuf>=1.16",
         "black>=19.3b0",
         "isort>=4.3.21",
         "flake8>=3.7.7,<4.0.0",

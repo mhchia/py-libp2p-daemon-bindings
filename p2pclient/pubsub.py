@@ -57,7 +57,7 @@ class PubSubClient:
         await stream.close()
         raise_if_failed(resp)
 
-    async def subscribe(self, topic: str) -> Tuple[anyio.abc.SocketStream]:
+    async def subscribe(self, topic: str) -> anyio.abc.SocketStream:
         """PUBSUB SUBSCRIBE
         """
         pubsub_req = p2pd_pb.PSRequest(type=p2pd_pb.PSRequest.SUBSCRIBE, topic=topic)

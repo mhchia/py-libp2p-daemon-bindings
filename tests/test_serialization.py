@@ -49,7 +49,7 @@ async def test_write_unsigned_varint_overflow(integer):
         await write_unsigned_varint(s, integer)
 
 
-@pytest.mark.parametrize("integer", (-1, -2 ** 32, -2 ** 64, -2 ** 128))
+@pytest.mark.parametrize("integer", (-1, -(2 ** 32), -(2 ** 64), -(2 ** 128)))
 @pytest.mark.anyio
 async def test_write_unsigned_varint_negative(integer):
     s = MockReaderWriter()

@@ -19,7 +19,7 @@ class DHTClient:
 
     @staticmethod
     async def _read_dht_stream(
-        stream: anyio.abc.SocketStream
+        stream: anyio.abc.SocketStream,
     ) -> AsyncGenerator[p2pd_pb.DHTResponse, None]:
         while True:
             dht_resp = p2pd_pb.DHTResponse()  # type: ignore

@@ -8,7 +8,7 @@ import uuid
 import anyio
 from async_exit_stack import AsyncExitStack
 from async_generator import asynccontextmanager
-from libp2p.peer.id import ID
+from p2pclient.libp2p_stubs.peer.id import ID
 from multiaddr import Multiaddr, protocols
 import multihash
 import pytest
@@ -97,19 +97,20 @@ class Daemon:
         self.f_log = open(self.log_filename, "wb")
 
     def _run(self):
-        cmd_list = ["p2pd", f"-listen={str(self.control_maddr)}"]
+        cmd_list = ["p2pd", f"--listen={str(self.control_maddr)}"]
         if self.enable_connmgr:
-            cmd_list += ["-connManager=true", "-connLo=1", "-connHi=2", "-connGrace=0"]
+            cmd_list += ["--connManager=true", "--connLo=1", "--connHi=2", "--connGrace=0"]
         if self.enable_dht:
-            cmd_list += ["-dht=true"]
+            cmd_list += ["--dht=true"]
         if self.enable_pubsub:
-            cmd_list += ["-pubsub=true", "-pubsubRouter=gossipsub"]
+            cmd_list += ["--pubsub=true", "--pubsubRouter=gossipsub"]
         self.proc_daemon = subprocess.Popen(
             cmd_list, stdout=self.f_log, stderr=self.f_log, bufsize=0
         )
 
     async def wait_until_ready(self):
-        lines_head_pattern = (b"Control socket:", b"Peer ID:", b"Peer Addrs:")
+        # lines_head_pattern = (b"Control socket:", b"Peer ID:", b"Peer Addrs:", b"daemon has started")
+        lines_head_pattern = (b"daemon has started",)
         lines_head_occurred = {line: False for line in lines_head_pattern}
 
         with open(self.log_filename, "rb") as f_log_read:
@@ -772,7 +773,7 @@ async def test_client_pubsub_subscribe(p2pcs):
     pubsub_msg_1_another = p2pd_pb.PSMessage()
     await read_pbmsg_safe(stream_1_another, pubsub_msg_1_another)
     assert pubsub_msg_1_another.data == another_data_0
-    # test case: test `from_id`
+    # test case: test `from`
     assert ID(pubsub_msg_1_1.from_id) == peer_id_0
     # test case: test `from_id`, when it is sent through 1 hop(p2pcs[1])
     stream_2 = await p2pcs[2].pubsub_subscribe(topic)

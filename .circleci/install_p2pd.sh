@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LIBP2P_DAEMON_VERSION=v0.2.0
+LIBP2P_DAEMON_VERSION=v0.3.0
 GOPACKAGE=go1.12.6.linux-amd64.tar.gz
 PROJECT_NAME=go-libp2p-daemon
 LIBP2P_DAEMON_REPO=github.com/libp2p/$PROJECT_NAME

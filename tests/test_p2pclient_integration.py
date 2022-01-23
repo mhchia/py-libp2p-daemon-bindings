@@ -1,21 +1,22 @@
+import abc
 import functools
 import os
 import subprocess
 import time
-from typing import NamedTuple
 import uuid
+from typing import List, NamedTuple, Tuple
 
 import anyio
-from async_exit_stack import AsyncExitStack
-from async_generator import asynccontextmanager
-from p2pclient.libp2p_stubs.peer.id import ID
-from multiaddr import Multiaddr, protocols
 import multihash
 import pytest
+from async_exit_stack import AsyncExitStack
+from async_generator import asynccontextmanager
+from multiaddr import Multiaddr, protocols
 
-from p2pclient.exceptions import ControlFailure
-from p2pclient.p2pclient import Client
 import p2pclient.pb.p2pd_pb2 as p2pd_pb
+from p2pclient.exceptions import ControlFailure
+from p2pclient.libp2p_stubs.peer.id import ID
+from p2pclient.p2pclient import Client
 from p2pclient.utils import get_unused_tcp_port, read_pbmsg_safe
 
 TIMEOUT_DURATION = 30  # seconds
@@ -72,7 +73,8 @@ async def try_until_success(coro_func, timeout=TIMEOUT_DURATION):
         await anyio.sleep(0.01)
 
 
-class Daemon:
+class Daemon(abc.ABC):
+    LINES_HEAD_PATTERN: Tuple[bytes]
     control_maddr = None
     proc_daemon = None
     log_filename = ""
@@ -80,8 +82,15 @@ class Daemon:
     closed = None
 
     def __init__(
-        self, control_maddr, enable_control, enable_connmgr, enable_dht, enable_pubsub
+        self,
+        daemon_executable: str,
+        control_maddr,
+        enable_control,
+        enable_connmgr,
+        enable_dht,
+        enable_pubsub,
     ):
+        self.daemon_executable = daemon_executable
         self.control_maddr = control_maddr
         self.enable_control = enable_control
         self.enable_connmgr = enable_connmgr
@@ -89,28 +98,29 @@ class Daemon:
         self.enable_pubsub = enable_pubsub
         self.is_closed = False
         self._start_logging()
-        self._run()
+        self._run(daemon_executable)
 
     def _start_logging(self):
         name_control_maddr = str(self.control_maddr).replace("/", "_").replace(".", "_")
         self.log_filename = f"/tmp/log_p2pd{name_control_maddr}.txt"
         self.f_log = open(self.log_filename, "wb")
 
-    def _run(self):
-        cmd_list = ["p2pd", f"-listen={str(self.control_maddr)}"]
-        if self.enable_connmgr:
-            cmd_list += ["-connManager=true", "-connLo=1", "-connHi=2", "-connGrace=0"]
-        if self.enable_dht:
-            cmd_list += ["-dht=true"]
-        if self.enable_pubsub:
-            cmd_list += ["-pubsub=true", "-pubsubRouter=gossipsub"]
+    @abc.abstractmethod
+    def _make_command_line_options(self) -> List[str]:
+        ...
+
+    @abc.abstractmethod
+    def _terminate(self) -> None:
+        ...
+
+    def _run(self, daemon_executable: str):
+        cmd_list = [daemon_executable] + self._make_command_line_options()
         self.proc_daemon = subprocess.Popen(
             cmd_list, stdout=self.f_log, stderr=self.f_log, bufsize=0
         )
 
     async def wait_until_ready(self):
-        lines_head_pattern = (b"Control socket:", b"Peer ID:", b"Peer Addrs:")
-        lines_head_occurred = {line: False for line in lines_head_pattern}
+        lines_head_occurred = {line: False for line in self.LINES_HEAD_PATTERN}
 
         with open(self.log_filename, "rb") as f_log_read:
 
@@ -129,10 +139,50 @@ class Daemon:
     def close(self):
         if self.is_closed:
             return
-        self.proc_daemon.terminate()
+        self._terminate()
         self.proc_daemon.wait()
         self.f_log.close()
         self.is_closed = True
+
+
+class GoDaemon(Daemon):
+
+    LINES_HEAD_PATTERN = (b"Control socket:", b"Peer ID:", b"Peer Addrs:")
+
+    def _make_command_line_options(self) -> List[str]:
+        cmd_list = [f"-listen={str(self.control_maddr)}"]
+        if self.enable_connmgr:
+            cmd_list += ["-connManager=true", "-connLo=1", "-connHi=2", "-connGrace=0"]
+        if self.enable_dht:
+            cmd_list += ["-dht=true"]
+        if self.enable_pubsub:
+            cmd_list += ["-pubsub=true", "-pubsubRouter=gossipsub"]
+
+        return cmd_list
+
+    def _terminate(self) -> None:
+        self.proc_daemon.terminate()
+
+
+class JsDaemon(Daemon):
+
+    LINES_HEAD_PATTERN = (b"daemon has started",)
+
+    def _make_command_line_options(self) -> List[str]:
+        cmd_list = [f"--listen={str(self.control_maddr)}"]
+        if self.enable_connmgr:
+            cmd_list += ["--connManager=true", "--connLo=1", "--connHi=2", "--connGrace=0"]
+        if self.enable_dht:
+            cmd_list += ["--dht=true"]
+        if self.enable_pubsub:
+            cmd_list += ["--pubsub=true", "--pubsubRouter=gossipsub"]
+
+        return cmd_list
+
+    # TODO: investigate why the JS daemon needs to be killed instead of terminating gracefully. Some tests
+    #       (ex: test_client_stream_open_failure) freeze after completion if we use terminate.
+    def _terminate(self) -> None:
+        self.proc_daemon.kill()
 
 
 class DaemonTuple(NamedTuple):
@@ -146,7 +196,7 @@ class ConnectionFailure(Exception):
 
 @asynccontextmanager
 async def make_p2pd_pair_unix(
-    enable_control, enable_connmgr, enable_dht, enable_pubsub
+    daemon_executable, enable_control, enable_connmgr, enable_dht, enable_pubsub
 ):
     name = str(uuid.uuid4())[:8]
     control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{name}.sock")
@@ -161,6 +211,7 @@ async def make_p2pd_pair_unix(
     except FileNotFoundError:
         pass
     async with _make_p2pd_pair(
+        daemon_executable=daemon_executable,
         control_maddr=control_maddr,
         listen_maddr=listen_maddr,
         enable_control=enable_control,
@@ -172,10 +223,13 @@ async def make_p2pd_pair_unix(
 
 
 @asynccontextmanager
-async def make_p2pd_pair_ip4(enable_control, enable_connmgr, enable_dht, enable_pubsub):
+async def make_p2pd_pair_ip4(
+    daemon_executable, enable_control, enable_connmgr, enable_dht, enable_pubsub
+):
     control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     async with _make_p2pd_pair(
+        daemon_executable=daemon_executable,
         control_maddr=control_maddr,
         listen_maddr=listen_maddr,
         enable_control=enable_control,
@@ -188,6 +242,7 @@ async def make_p2pd_pair_ip4(enable_control, enable_connmgr, enable_dht, enable_
 
 @asynccontextmanager
 async def _make_p2pd_pair(
+    daemon_executable,
     control_maddr,
     listen_maddr,
     enable_control,
@@ -195,7 +250,9 @@ async def _make_p2pd_pair(
     enable_dht,
     enable_pubsub,
 ):
-    p2pd = Daemon(
+    daemon_cls = GoDaemon if daemon_executable == "p2pd" else JsDaemon
+    p2pd = daemon_cls(
+        daemon_executable=daemon_executable,
         control_maddr=control_maddr,
         enable_control=enable_control,
         enable_connmgr=enable_connmgr,
@@ -215,6 +272,7 @@ async def _make_p2pd_pair(
 
 @pytest.fixture
 async def p2pcs(
+    daemon_executable,
     num_p2pds,
     enable_control,
     enable_connmgr,
@@ -227,6 +285,7 @@ async def p2pcs(
         p2pd_tuples = [
             await stack.enter_async_context(
                 func_make_p2pd_pair(
+                    daemon_executable=daemon_executable,
                     enable_control=enable_control,
                     enable_connmgr=enable_connmgr,
                     enable_dht=enable_dht,
@@ -318,6 +377,8 @@ async def test_client_list_peers(p2pcs):
     assert len(await p2pcs[2].list_peers()) == 1
 
 
+# DISCONNECT not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control", (True,))
 @pytest.mark.anyio
 async def test_client_disconnect(peer_id_random, p2pcs):
@@ -337,6 +398,8 @@ async def test_client_disconnect(peer_id_random, p2pcs):
     assert len(await p2pcs[1].list_peers()) == 0
 
 
+# the current code complains because the multiaddr returned by the daemon contains its /p2p/ address.
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control", (True,))
 @pytest.mark.anyio
 async def test_client_stream_open_success(p2pcs):
@@ -480,6 +543,8 @@ async def test_client_stream_handler_failure(p2pcs):
         await p2pcs[0].stream_open(peer_id_1, (proto,))
 
 
+# Fails randomly with response = type: ERROR # error {msg: "Not found"}
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_find_peer_success(p2pcs):
@@ -504,6 +569,8 @@ async def test_client_dht_find_peer_failure(peer_id_random, p2pcs):
         await p2pcs[0].dht_find_peer(peer_id_2)
 
 
+# DHT FIND_PEERS_CONNECTED_TO_PEER not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_find_peers_connected_to_peer_success(p2pcs):
@@ -516,6 +583,8 @@ async def test_client_dht_find_peers_connected_to_peer_success(p2pcs):
     assert len(pinfos_connecting_to_2) == 1
 
 
+# DHT FIND_PEERS_CONNECTED_TO_PEER not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_find_peers_connected_to_peer_failure(peer_id_random, p2pcs):
@@ -529,6 +598,8 @@ async def test_client_dht_find_peers_connected_to_peer_failure(peer_id_random, p
     assert not pinfos
 
 
+# Fails randomly: response = type: ERROR error {msg: 'not found'}.
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_find_providers(p2pcs):
@@ -539,6 +610,8 @@ async def test_client_dht_find_providers(p2pcs):
     assert not pinfos
 
 
+# We expect get_closest_peers to return 2 peers, only one is returned.
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_get_closest_peers(p2pcs):
@@ -548,6 +621,8 @@ async def test_client_dht_get_closest_peers(p2pcs):
     assert len(peer_ids_1) == 2
 
 
+# We get the following error: The stream was closed before the read operation could be completed
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_get_public_key_success(peer_id_random, p2pcs):
@@ -561,6 +636,8 @@ async def test_client_dht_get_public_key_success(peer_id_random, p2pcs):
     assert pk0 != pk1
 
 
+# We get the following error: The stream was closed before the read operation could be completed
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_get_public_key_failure(peer_id_random, p2pcs):
@@ -587,6 +664,8 @@ async def test_client_dht_get_value(p2pcs):
         await p2pcs[0].dht_get_value(key_not_existing)
 
 
+# DHT SEARCH_VALUE not implemented in jsp2pd.
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_search_value(p2pcs):
@@ -626,6 +705,8 @@ async def test_client_dht_put_value(p2pcs):
         await p2pcs[0].dht_put_value(key_invalid, key_invalid)
 
 
+# Fails: response = type: ERROR error {msg: 'not found'}.
+@pytest.mark.jsp2pd_probable_bug
 @pytest.mark.parametrize("enable_control, enable_dht", ((True, True),))
 @pytest.mark.anyio
 async def test_client_dht_provide(p2pcs):
@@ -642,6 +723,8 @@ async def test_client_dht_provide(p2pcs):
     assert pinfos[0].peer_id == peer_id_0
 
 
+# CONNMANAGER functionalities not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_connmgr", ((True, True),))
 @pytest.mark.anyio
 async def test_client_connmgr_tag_peer(peer_id_random, p2pcs):
@@ -658,6 +741,8 @@ async def test_client_connmgr_tag_peer(peer_id_random, p2pcs):
     await p2pcs[1].connmgr_tag_peer(peer_id_random, "123", 123)
 
 
+# CONNMANAGER functionalities not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_connmgr", ((True, True),))
 @pytest.mark.anyio
 async def test_client_connmgr_untag_peer(peer_id_random, p2pcs):
@@ -688,6 +773,8 @@ async def test_client_connmgr_trim_automatically_by_connmgr(p2pcs):
     assert len(await p2pcs[1].list_peers()) == 1
 
 
+# CONNMANAGER functionalities not implemented in jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_connmgr", ((True, True),))
 @pytest.mark.anyio
 async def test_client_connmgr_trim(p2pcs):
@@ -712,6 +799,8 @@ async def test_client_pubsub_get_topics(p2pcs):
     assert len(topics) == 0
 
 
+# PUBSUB LIST_PEERS is not supported on jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_pubsub", ((True, True),))
 @pytest.mark.anyio
 async def test_client_pubsub_list_topic_peers(p2pcs):
@@ -725,6 +814,8 @@ async def test_client_pubsub_publish(p2pcs):
     await p2pcs[0].pubsub_publish("123", b"data")
 
 
+# PUBSUB LIST_PEERS is not supported on jsp2pd
+@pytest.mark.go_only
 @pytest.mark.parametrize("enable_control, enable_pubsub", ((True, True),))
 @pytest.mark.anyio
 async def test_client_pubsub_subscribe(p2pcs):

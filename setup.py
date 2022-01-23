@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import setuptools
+from p2pclient import __version__ as p2pclient_version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -26,7 +27,7 @@ extras_require["dev"] = (
 
 setuptools.setup(
     name="p2pclient",
-    version="0.1.2",
+    version=p2pclient_version,
     author="Kevin Mai-Hsuan Chia",
     author_email="kevin.mh.chia@gmail.com",
     description="The libp2p daemon bindings for Python",
@@ -39,7 +40,6 @@ setuptools.setup(
         "multiaddr>=0.0.8,<0.1.0",
         "protobuf>=3.9.0",
         "pymultihash>=0.8.2",
-        "libp2p>=0.1.1",
         "anyio>=1.2.2,<2.0.0",
         "async-generator>=1.10,<2.0",
         "async-exit-stack>=1.0.1,<2.0.0",

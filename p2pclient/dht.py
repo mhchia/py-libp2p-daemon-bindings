@@ -1,8 +1,8 @@
 from typing import AsyncGenerator, Tuple
 
 import anyio
-from libp2p.crypto.pb import crypto_pb2 as crypto_pb
-from libp2p.peer.id import ID
+from p2pclient.libp2p_stubs.crypto.pb import crypto_pb2 as crypto_pb
+from p2pclient.libp2p_stubs.peer.id import ID
 
 from .control import DaemonConnector
 from .datastructures import PeerInfo

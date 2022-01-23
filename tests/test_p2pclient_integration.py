@@ -8,7 +8,7 @@ import uuid
 import anyio
 from async_exit_stack import AsyncExitStack
 from async_generator import asynccontextmanager
-from libp2p.peer.id import ID
+from p2pclient.libp2p_stubs.peer.id import ID
 from multiaddr import Multiaddr, protocols
 import multihash
 import pytest

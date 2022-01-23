@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import anyio
-from libp2p.peer.id import ID
+from p2pclient.libp2p_stubs.peer.id import ID
 
 from .control import DaemonConnector
 from .pb import p2pd_pb2 as p2pd_pb

@@ -1,4 +1,4 @@
-from libp2p.peer.id import ID
+from p2pclient.libp2p_stubs.peer.id import ID
 from multiaddr import Multiaddr
 import pytest
 

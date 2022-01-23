@@ -1,7 +1,5 @@
 syntax = "proto2";
 
-package p2pclient.p2pd.pb;
-
 message Request {
   enum Type {
     IDENTIFY       = 0;
@@ -13,6 +11,7 @@ message Request {
     CONNMANAGER    = 6;
     DISCONNECT     = 7;
     PUBSUB         = 8;
+    PEERSTORE      = 9;
   }
 
   required Type type = 1;
@@ -24,6 +23,7 @@ message Request {
   optional ConnManagerRequest connManager = 6;
   optional DisconnectRequest disconnect = 7;
   optional PSRequest pubsub = 8;
+  optional PeerstoreRequest peerStore = 9;
 }
 
 message Response {
@@ -39,6 +39,7 @@ message Response {
   optional DHTResponse dht = 5;
   repeated PeerInfo peers = 6;
   optional PSResponse pubsub = 7;
+  optional PeerstoreResponse peerStore = 8;
 }
 
 message IdentifyResponse {
@@ -144,7 +145,7 @@ message PSRequest {
 }
 
 message PSMessage {
-  optional bytes from_id = 1;
+  optional bytes from = 1;
   optional bytes data = 2;
   optional bytes seqno = 3;
   repeated string topicIDs = 4;
@@ -155,4 +156,20 @@ message PSMessage {
 message PSResponse {
   repeated string topics = 1;
   repeated bytes peerIDs = 2;
+}
+
+message PeerstoreRequest {
+  enum Type {
+    GET_PROTOCOLS = 1;
+    GET_PEER_INFO = 2;
+  }
+
+  required Type type = 1;
+  optional bytes id = 2;
+  repeated string protos = 3;
+}
+
+message PeerstoreResponse {
+  optional PeerInfo peer = 1;
+  repeated string protos = 2;
 }

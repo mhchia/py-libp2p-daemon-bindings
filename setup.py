@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import setuptools
-from p2pclient._version import __version__ as p2pclient_version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+# Retrieve the version of the package in __version__ without importing it
+with open("p2pclient/_version.py") as f:
+    exec(f.read())
 
 extras_require = {
     "test": ["pytest>=4.6.3,<5.0.0", "pytest-cov>=2.7.1,<3.0.0"],
@@ -27,7 +29,7 @@ extras_require["dev"] = (
 
 setuptools.setup(
     name="p2pclient",
-    version=p2pclient_version,
+    version=__version__,
     author="Kevin Mai-Hsuan Chia",
     author_email="kevin.mh.chia@gmail.com",
     description="The libp2p daemon bindings for Python",

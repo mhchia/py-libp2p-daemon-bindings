@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import setuptools
-from p2pclient import __version__ as p2pclient_version
+from p2pclient._version import __version__ as p2pclient_version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

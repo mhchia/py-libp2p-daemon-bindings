@@ -16,6 +16,7 @@ from multiaddr import Multiaddr, protocols
 
 from p2pclient.p2pclient import Client
 from p2pclient.utils import get_unused_tcp_port
+from typing import BinaryIO, Optional
 
 TIMEOUT_DURATION = 30  # seconds
 
@@ -37,21 +38,21 @@ async def try_until_success(coro_func, timeout=TIMEOUT_DURATION):
 
 
 class Daemon(abc.ABC):
-    LINES_HEAD_PATTERN: Tuple[bytes]
-    control_maddr = None
-    proc_daemon = None
-    log_filename = ""
-    f_log = None
-    closed = None
+    LINES_HEAD_PATTERN: Tuple[bytes, ...]
+    control_maddr: Multiaddr
+    proc_daemon: subprocess.Popen
+    log_filename: str = ""
+    f_log: Optional[BinaryIO] = None
+    is_closed: bool
 
     def __init__(
         self,
         daemon_executable: str,
-        control_maddr,
-        enable_control,
-        enable_connmgr,
-        enable_dht,
-        enable_pubsub,
+        control_maddr: Multiaddr,
+        enable_control: bool,
+        enable_connmgr: bool,
+        enable_dht: bool,
+        enable_pubsub: bool,
     ):
         self.daemon_executable = daemon_executable
         self.control_maddr = control_maddr
@@ -160,7 +161,11 @@ class DaemonTuple(NamedTuple):
 
 @asynccontextmanager
 async def make_p2pd_pair_unix(
-    daemon_executable, enable_control, enable_connmgr, enable_dht, enable_pubsub
+    daemon_executable: str,
+    enable_control: bool,
+    enable_connmgr: bool,
+    enable_dht: bool,
+    enable_pubsub: bool,
 ):
     name = str(uuid.uuid4())[:8]
     control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{name}.sock")
@@ -174,7 +179,7 @@ async def make_p2pd_pair_unix(
         os.unlink(listen_maddr.value_for_protocol(protocols.P_UNIX))
     except FileNotFoundError:
         pass
-    async with _make_p2pd_pair(
+    async with make_p2pd_pair(
         daemon_executable=daemon_executable,
         control_maddr=control_maddr,
         listen_maddr=listen_maddr,
@@ -188,11 +193,15 @@ async def make_p2pd_pair_unix(
 
 @asynccontextmanager
 async def make_p2pd_pair_ip4(
-    daemon_executable, enable_control, enable_connmgr, enable_dht, enable_pubsub
+    daemon_executable: str,
+    enable_control: bool,
+    enable_connmgr: bool,
+    enable_dht: bool,
+    enable_pubsub: bool,
 ):
     control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
-    async with _make_p2pd_pair(
+    async with make_p2pd_pair(
         daemon_executable=daemon_executable,
         control_maddr=control_maddr,
         listen_maddr=listen_maddr,
@@ -205,14 +214,14 @@ async def make_p2pd_pair_ip4(
 
 
 @asynccontextmanager
-async def _make_p2pd_pair(
-    daemon_executable,
-    control_maddr,
-    listen_maddr,
-    enable_control,
-    enable_connmgr,
-    enable_dht,
-    enable_pubsub,
+async def make_p2pd_pair(
+    daemon_executable: str,
+    control_maddr: Multiaddr,
+    listen_maddr: Multiaddr,
+    enable_control: bool,
+    enable_connmgr: bool,
+    enable_dht: bool,
+    enable_pubsub: bool,
 ):
     daemon_cls = GoDaemon if daemon_executable == "p2pd" else JsDaemon
     p2pd = daemon_cls(

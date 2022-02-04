@@ -38,13 +38,14 @@ setuptools.setup(
     url="https://github.com/mhchia/py-libp2p-daemon-bindings",
     packages=setuptools.find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
+        "anyio>=1.2.2,<2.0.0",
+        "async-exit-stack>=1.0.1,<2.0.0",
+        "async-generator>=1.10,<2.0",
         "base58>=1.0.3",
         "multiaddr>=0.0.8,<0.1.0",
         "protobuf>=3.9.0",
+        "pycryptodome>=3.0.0,<4.0.0",
         "pymultihash>=0.8.2",
-        "anyio>=1.2.2,<2.0.0",
-        "async-generator>=1.10,<2.0",
-        "async-exit-stack>=1.0.1,<2.0.0",
     ],
     extras_require=extras_require,
     classifiers=[

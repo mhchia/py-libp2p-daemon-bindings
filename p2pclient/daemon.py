@@ -8,7 +8,7 @@ import os
 import subprocess
 import time
 import uuid
-from typing import List, NamedTuple, Tuple
+from typing import AsyncIterator, Awaitable, Callable, List, NamedTuple, Tuple
 
 import anyio
 from async_generator import asynccontextmanager
@@ -21,7 +21,9 @@ from typing import BinaryIO, Optional
 TIMEOUT_DURATION = 30  # seconds
 
 
-async def try_until_success(coro_func, timeout=TIMEOUT_DURATION):
+async def try_until_success(
+    coro_func: Callable[[], Awaitable[bool]], timeout: int = TIMEOUT_DURATION
+) -> None:
     """
     Keep running ``coro_func`` until the time is out.
     All arguments of ``coro_func`` should be filled, i.e. it should be called without arguments.
@@ -40,7 +42,7 @@ async def try_until_success(coro_func, timeout=TIMEOUT_DURATION):
 class Daemon(abc.ABC):
     LINES_HEAD_PATTERN: Tuple[bytes, ...]
     control_maddr: Multiaddr
-    proc_daemon: subprocess.Popen
+    proc_daemon: subprocess.Popen[bytes]
     log_filename: str = ""
     f_log: Optional[BinaryIO] = None
     is_closed: bool
@@ -64,7 +66,7 @@ class Daemon(abc.ABC):
         self._start_logging()
         self._run(daemon_executable)
 
-    def _start_logging(self):
+    def _start_logging(self) -> None:
         name_control_maddr = str(self.control_maddr).replace("/", "_").replace(".", "_")
         self.log_filename = f"/tmp/log_p2pd{name_control_maddr}.txt"
         self.f_log = open(self.log_filename, "wb")
@@ -77,18 +79,18 @@ class Daemon(abc.ABC):
     def _terminate(self) -> None:
         ...
 
-    def _run(self, daemon_executable: str):
+    def _run(self, daemon_executable: str) -> None:
         cmd_list = [daemon_executable] + self._make_command_line_options()
         self.proc_daemon = subprocess.Popen(
             cmd_list, stdout=self.f_log, stderr=self.f_log, bufsize=0
         )
 
-    async def wait_until_ready(self):
+    async def wait_until_ready(self) -> None:
         lines_head_occurred = {line: False for line in self.LINES_HEAD_PATTERN}
 
         with open(self.log_filename, "rb") as f_log_read:
 
-            async def read_from_daemon_and_check():
+            async def read_from_daemon_and_check() -> bool:
                 line = f_log_read.readline()
                 for head_pattern in lines_head_occurred:
                     if line.startswith(head_pattern):
@@ -100,7 +102,7 @@ class Daemon(abc.ABC):
         # sleep for a while in case that the daemon haven't been ready after emitting these lines
         await anyio.sleep(0.1)
 
-    def close(self):
+    def close(self) -> None:
         if self.is_closed:
             return
         self._terminate()
@@ -166,7 +168,7 @@ async def make_p2pd_pair_unix(
     enable_connmgr: bool,
     enable_dht: bool,
     enable_pubsub: bool,
-):
+) -> AsyncIterator[DaemonTuple]:
     name = str(uuid.uuid4())[:8]
     control_maddr = Multiaddr(f"/unix/tmp/test_p2pd_control_{name}.sock")
     listen_maddr = Multiaddr(f"/unix/tmp/test_p2pd_listen_{name}.sock")
@@ -198,7 +200,7 @@ async def make_p2pd_pair_ip4(
     enable_connmgr: bool,
     enable_dht: bool,
     enable_pubsub: bool,
-):
+) -> AsyncIterator[DaemonTuple]:
     control_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     listen_maddr = Multiaddr(f"/ip4/127.0.0.1/tcp/{get_unused_tcp_port()}")
     async with make_p2pd_pair(
@@ -222,7 +224,7 @@ async def make_p2pd_pair(
     enable_connmgr: bool,
     enable_dht: bool,
     enable_pubsub: bool,
-):
+) -> AsyncIterator[DaemonTuple]:
     daemon_cls = GoDaemon if daemon_executable == "p2pd" else JsDaemon
     p2pd = daemon_cls(
         daemon_executable=daemon_executable,

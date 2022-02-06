@@ -3,6 +3,9 @@ The classes in this file allow to launch the JS or Go daemon as a subprocess. Th
 for application maintainers to write tests using one or more instances of the P2P daemon.
 """
 
+# Used for the annotation of Popen, which is not generic before Python 3.9
+from __future__ import annotations
+
 import abc
 import os
 import subprocess

@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - master
-      - od-ci-github-actions
   pull_request:
     branches:
       - master
@@ -19,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         # Tests disabled on Python 3.10 because of an issue with pytest
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.7", "3.8", "3.9"]
 
     steps:
     - uses: actions/checkout@v2

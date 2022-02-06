@@ -1,0 +1,57 @@
+# This workflow will install Python dependencies, run tests with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Unit tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Tests disabled on Python 3.10 because of an issue with pytest
+        python-version: ["3.7", "3.8", "3.9"]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Go for p2pd
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.12'
+    - name: Install nodejs for jsp2pd
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    - name: Install p2pd
+      run: bash -x scripts/install_p2pd.sh
+    - name: Install jsp2pd
+      run: npm install --global libp2p-daemon@0.10.2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Python dependencies
+      run: |
+        pip install -e .[test]
+    - name: Run unit tests with p2pd
+      run: |
+        pytest -v --daemon=p2pd .
+    - name: Run unit tests with jsp2pd
+      run: |
+        pytest -v --daemon=jsp2pd .

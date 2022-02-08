@@ -46,7 +46,7 @@ class PublicKey(Key):
         """Return the protobuf representation of this ``Key``."""
         key_type = self.get_type().value
         data = self.to_bytes()
-        protobuf_key = protobuf.PublicKey(key_type=key_type, data=data)
+        protobuf_key = protobuf.PublicKey(key_type=key_type, data=data)  # type: ignore
         return protobuf_key
 
     def serialize(self) -> bytes:
@@ -73,7 +73,7 @@ class PrivateKey(Key):
         """Return the protobuf representation of this ``Key``."""
         key_type = self.get_type().value
         data = self.to_bytes()
-        protobuf_key = protobuf.PrivateKey(key_type=key_type, data=data)
+        protobuf_key = protobuf.PrivateKey(key_type=key_type, data=data)    # type: ignore
         return protobuf_key
 
     def serialize(self) -> bytes:

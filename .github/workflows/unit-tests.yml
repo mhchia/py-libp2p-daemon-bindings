@@ -49,6 +49,9 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install -e .[test]
+    - name: Check types
+      run: |
+        mypy p2pclient
     - name: Run unit tests with p2pd
       run: |
         pytest -v --daemon=p2pd .

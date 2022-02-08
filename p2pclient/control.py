@@ -87,7 +87,7 @@ class ControlClient:
             await self.task_group.spawn(self._dispatcher, client)
 
     async def _dispatcher(self, stream: anyio.abc.SocketStream) -> None:
-        pb_stream_info = p2pd_pb.StreamInfo()  # type: ignore
+        pb_stream_info = p2pd_pb.StreamInfo()
         await read_pbmsg_safe(stream, pb_stream_info)
         stream_info = StreamInfo.from_pb(pb_stream_info)
         self.logger.info("New incoming stream: %s", stream_info)
@@ -136,7 +136,7 @@ class ControlClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.IDENTIFY)
         await write_pbmsg(stream, req)
 
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         await stream.close()
         raise_if_failed(resp)
@@ -158,7 +158,7 @@ class ControlClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.CONNECT, connect=connect_req)
         await write_pbmsg(stream, req)
 
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         await stream.close()
         raise_if_failed(resp)
@@ -167,13 +167,13 @@ class ControlClient:
         req = p2pd_pb.Request(type=p2pd_pb.Request.LIST_PEERS)
         stream = await self.daemon_connector.open_connection()
         await write_pbmsg(stream, req)
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         await stream.close()
         raise_if_failed(resp)
 
         peers = tuple(PeerInfo.from_pb(pinfo) for pinfo in resp.peers)
-        return peers
+        return peers    # type: ignore
 
     async def disconnect(self, peer_id: ID) -> None:
         disconnect_req = p2pd_pb.DisconnectRequest(peer=peer_id.to_bytes())
@@ -182,7 +182,7 @@ class ControlClient:
         )
         stream = await self.daemon_connector.open_connection()
         await write_pbmsg(stream, req)
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         await stream.close()
         raise_if_failed(resp)
@@ -200,7 +200,7 @@ class ControlClient:
         )
         await write_pbmsg(stream, req)
 
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         raise_if_failed(resp)
 
@@ -221,7 +221,7 @@ class ControlClient:
         )
         await write_pbmsg(stream, req)
 
-        resp = p2pd_pb.Response()  # type: ignore
+        resp = p2pd_pb.Response()
         await read_pbmsg_safe(stream, resp)
         await stream.close()
         raise_if_failed(resp)

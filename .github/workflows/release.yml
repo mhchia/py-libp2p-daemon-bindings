@@ -1,12 +1,8 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  release:
+    types: [published]
 
 jobs:
   release:
@@ -23,7 +19,7 @@ jobs:
         run: |
           python -m build --sdist --wheel --outdir dist/ .
       - name: Check that the version matches the tag
-#        if: startsWith(github.ref, 'refs/tags')
+        if: startsWith(github.ref, 'refs/tags')
         run: |
           PACKAGE_VERSION=$(python3 -c "with open('p2pclient/_version.py') as f: exec(f.read());print(__version__)")
           GIT_TAG=${GITHUB_REF#refs/*/}

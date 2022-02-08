@@ -23,9 +23,13 @@ jobs:
         run: |
           python -m build --sdist --wheel --outdir dist/ .
       - name: Check that the version matches the tag
-#        if: startsWith(github.ref, 'refs/tags')
+        if: startsWith(github.ref, 'refs/tags')
         run: |
-          echo "tag: '${GITHUB_REF#refs/*/}'"
+          PACKAGE_VERSION=$(cat p2pclient/_version.py)
+          GIT_TAG=${GITHUB_REF#refs/*/}
+          echo "Package version: ${PACKAGE_VERSION}"
+          echo "Git tag: ${GIT_TAG}"
+          test "${PACKAGE_VERSION}" == "${GIT_TAG}"
       - name: Publish distribution to PyPI (test)
         if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@master

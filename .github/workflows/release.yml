@@ -25,11 +25,11 @@ jobs:
       - name: Check that the version matches the tag
 #        if: startsWith(github.ref, 'refs/tags')
         run: |
-          PACKAGE_VERSION=$(cat p2pclient/_version.py)
+          PACKAGE_VERSION=$(python3 -c "with open('p2pclient/_version.py') as f: exec(f.read());print(__version__)")
           GIT_TAG=${GITHUB_REF#refs/*/}
           echo "Package version: ${PACKAGE_VERSION}"
           echo "Git tag: ${GIT_TAG}"
-          test "${PACKAGE_VERSION}" == "${GIT_TAG}"
+          test "v${PACKAGE_VERSION}" == "${GIT_TAG}"
       - name: Publish distribution to PyPI (test)
         if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@master

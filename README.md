@@ -1,6 +1,6 @@
 # py-libp2p-daemon-bindings
 
-[![Build Status](https://circleci.com/gh/mhchia/py-libp2p-daemon-bindings/tree/master.svg?style=shield)](https://circleci.com/gh/mhchia/py-libp2p-daemon-bindings/tree/master)
+[![Unit tests](https://github.com/mhchia/py-libp2p-daemon-bindings/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/mhchia/py-libp2p-daemon-bindings/actions/workflows/unit-tests.yml)
 
 > The [libp2p daemon](https://github.com/libp2p/go-libp2p-daemon) bindings for Python
 

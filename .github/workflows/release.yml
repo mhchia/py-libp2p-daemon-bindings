@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install pypa/build
+        run: |
+          python -m pip install build --user
+      - name: Build a binary wheel and a source tarball
+        run: |
+          python -m build --sdist --wheel --outdir dist/ .
+      - name: Check that the version matches the tag
+        if: startsWith(github.ref, 'refs/tags')
+        run: |
+          PACKAGE_VERSION=$(python3 -c "with open('p2pclient/_version.py') as f: exec(f.read());print(__version__)")
+          GIT_TAG=${GITHUB_REF#refs/*/}
+          echo "Package version: ${PACKAGE_VERSION}"
+          echo "Git tag: ${GIT_TAG}"
+          test "v${PACKAGE_VERSION}" == "${GIT_TAG}"
+      - name: Publish distribution to PyPI (test)
+        if: startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

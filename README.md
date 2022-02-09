@@ -5,7 +5,7 @@
 > The [libp2p daemon](https://github.com/libp2p/go-libp2p-daemon) bindings for Python
 
 Provides a client library to interact with the official libp2p daemons.
-Supports the Go and JavaScript daemons.
+Supports the [Go](https://github.com/libp2p/go-libp2p-daemon) and [JavaScript](https://github.com/libp2p/js-libp2p-daemon) daemons.
 
 Features:
 - The `Client` class enables communication with a P2P daemon using its protobuf control protocol.

@@ -4,9 +4,17 @@
 
 > The [libp2p daemon](https://github.com/libp2p/go-libp2p-daemon) bindings for Python
 
-Have aligned with the go-client now!
+Provides a client library to interact with the official libp2p daemons.
+Supports the [Go](https://github.com/libp2p/go-libp2p-daemon) and [JavaScript](https://github.com/libp2p/js-libp2p-daemon) daemons.
 
-Methods
+Features:
+- The `Client` class enables communication with a P2P daemon using its protobuf control protocol.
+- The `Daemon` class allows to spawn a P2P daemon from Python code. This is especially useful for testing.
+
+Tested with the Go daemon v0.2.0 and the JS daemon v0.10.2.
+
+## Supported features (Go daemon)
+
 - [x] `Identify`
 - [x] `Connect`
 - [x] `StreamOpen`
@@ -15,3 +23,14 @@ Methods
 - [x] DHT ops
 - [x] Conn manager ops
 - [x] PubSub ops
+
+## Supported features (JS daemon)
+- [x] `Identify`
+- [x] `Connect`
+- [x] `StreamOpen`
+- [x] `StreamHandler` - Register
+- [x] `StreamHandler` - Inbound stream
+- [ ] DHT ops / most functionalities are bugged and some are not implemented
+- [ ] Conn manager ops
+- [x] PubSub ops
+- [ ] PeerStore

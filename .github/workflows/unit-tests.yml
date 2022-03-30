@@ -41,7 +41,7 @@ jobs:
     - name: Install p2pd
       run: bash -x scripts/install_p2pd.sh
     - name: Install jsp2pd
-      run: npm install --global libp2p-daemon@0.10.2
+      run: npm install --global libp2p-daemon@1.0.0
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
